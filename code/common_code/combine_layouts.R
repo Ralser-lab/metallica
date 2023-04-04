@@ -34,5 +34,18 @@ for( i in 1:length(lo_fns)){
 layout_allplates$plate_position <- paste(layout_allplates$plate,layout_allplates$position,sep="_")
 layout_allplates$condition <- gsub("AllEle_prepQC","AllEleprepQC",layout_allplates$condition)
 
+
+patterns <- c("x/100", "x/50", "x/20", "x/10", "x/5", "x/2", "0x","2x", "5x", "10x", "20x", "50x", "100x")
+replacements <- c("0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "0","2", "5", "10", "20", "50", "100")
+
+# fix all patterns
+for (i in seq_along(patterns)) {
+  layout_allplates$condition <- gsub(pattern = patterns[i], 
+                                     replacement = replacements[i], 
+                                     x =  layout_allplates$condition)
+}
+
+layout_allplates$condition <- gsub("_"," ",layout_allplates$condition)
+
 write.csv(layout_allplates,paste0(proj_dir,"/accessory_files/all_layouts_combined.csv"),row.names = F)
 

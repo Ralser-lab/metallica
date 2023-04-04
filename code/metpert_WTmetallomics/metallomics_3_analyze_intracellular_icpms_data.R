@@ -5,6 +5,7 @@
 #`  Description: Script to analyze all ICP-MS data from intracellular metallomics measurements
 #`---
 
+#############################################
 ### source paths functions and libraries  ###
 #############################################
 
@@ -55,7 +56,7 @@ Blank_df <- metallomics_data %>%
 Sample_df <- as.data.frame(metallomics_data) %>%
               filter(grepl("P3-",SampleName))%>%
               mutate(SampleName=gsub("P3-","",SampleName))%>%
-              mutate(plate_position = paste(LO,SampleName,sep = "_"))
+              mutate(plate_position = paste(LO,SampleName,sep = " "))
 
 ###################################
 ### Subtract blank from samples ###
@@ -111,36 +112,27 @@ lo_fns <- dir(lo_dir)
 
 layouts_allplates <- read.csv(paste0(acc_file_dir,"/all_layouts_combined.csv"),stringsAsFactors = F)%>%
                      mutate(condition = gsub ("Empty","ProcessBlank",condition))%>%
-                     mutate(condition = gsub ("AllEle_prepQC","ProcessBlank", condition))%>%
-                     mutate(condition = gsub ("AllEle_New","AllEle", condition))%>%
-                     mutate(condition = gsub ("0x","0",condition))%>%
-                     mutate(condition = gsub ("_x/5000","_0.005",condition))%>%
-                     mutate(condition = gsub ("_x/1000","_0.001",condition))%>%
-                     mutate(condition = gsub ("_x/100","_0.01",condition))%>%
-                     mutate(condition = gsub ("_x/50","_0.02",condition))%>%
-                     mutate(condition = gsub ("_x/20","_0.05",condition))%>%
-                     mutate(condition = gsub ("_x/10","_0.10",condition))%>%
-                     mutate(condition = gsub ("_x/5","_0.20",condition))%>%
-                     mutate(condition = gsub ("_x/2","_0.5",condition))%>%
-                     mutate(condition = gsub ("_2x","_2",condition))%>%
-                     mutate(condition = gsub ("_5x","_5",condition))%>%
-                     mutate(condition = gsub("AllEle","AllEle_1",condition))%>%
+                     mutate(condition = gsub ("AllEleprepQC","ProcessBlank", condition))%>%
+                     mutate(condition = gsub ("AllEle New","AllEle", condition))%>%
+                     mutate(condition = gsub("AllEle","AllEle 1",condition))%>%
                      dplyr::select(-c(position))
 
 #####################################
 ### Add Sample Names to Sample df ###
 #####################################
 
+layouts_allplates$plate_position <- gsub("_"," ",layouts_allplates$plate_position)
+
 Sample_df$SampleName <- layouts_allplates[match(Sample_df$plate_position,layouts_allplates$plate_position),"condition"]
 
 Sample_df <- Sample_df%>%
-              filter(!plate_position %in% c("2_F2","2_C2","1_C6","2_F1",
-                                            "2_B2","2_E2",
-                                            "4_F8","6_D2",
+              filter(!plate_position %in% c("2 F2","2 C2","1 C6","2 F1",
+                                            "2 B2","2 E2",
+                                            "4 F8","6 D2",
                                             # Filter out old Fe media in plate 6
-                                            "6_F1","6_B2","6_C2","6_E2","6_F2",
-                                            "6_G2","6_D3","6_E7","6_F7","6_B11",
-                                            "6_C11","6_D11","6_G11","6_B12"
+                                            "6 F1","6 B2","6 C2","6 E2","6 F2",
+                                            "6 G2","6 D3","6 E7","6 F7","6 B11",
+                                            "6 C11","6 D11","6 G11","6 B12"
                                             
                                             ))%>%
               ## Filter out all chelator samples - all of them have a "+" in the sample name
@@ -269,7 +261,7 @@ Sample_df_LOQfilt_cast <- Sample_df_LOQfilt %>%
                           dplyr::select(plate_position,SampleName,element_measured,CPS)%>%
                           reshape2::dcast(plate_position+SampleName ~ element_measured, value.var ="CPS")
 
-rownames(Sample_df_LOQfilt_cast) <- paste(Sample_df_LOQfilt_cast$plate_position,Sample_df_LOQfilt_cast$SampleName)
+rownames(Sample_df_LOQfilt_cast) <- paste(Sample_df_LOQfilt_cast$plate_position,Sample_df_LOQfilt_cast$SampleName, sep = "_")
 Sample_df_LOQfilt_cast_for_Norm <- Sample_df_LOQfilt_cast[,-c(1,2)]
 
 Sam_Pnorm <- Sample_df_LOQfilt_cast_for_Norm/Sample_df_LOQfilt_cast_for_Norm$P
@@ -296,10 +288,11 @@ Sample_df_LOQfilt_cast$Sample.Name <- rownames(Sample_df_LOQfilt_cast)
 ###############
 
 Sample_data_n <- rbind(Sam_Pnorm, Sample_df_LOQfilt_cast[,c(colnames(Sam_Pnorm))])%>%
-                  filter(!grepl("_o",Sample.Name))%>%
-                  separate(Sample.Name, into = c("plate_position","Sample.Name"), sep = " ")%>%
-                  separate(plate_position,into=c("plate",NA),sep="_",remove = F)%>%
-                  separate(Sample.Name,into = c("element_perturbed","rel_element_concentration_th"),sep="_")%>%
+                  mutate(Sample.Name = gsub("AllEle_1","AllEle 1",Sample.Name))%>%
+                  filter(!grepl(" o",Sample.Name))%>%
+                  separate(Sample.Name, into = c("plate_position","Sample.Name"), sep = "_")%>%
+                  separate(plate_position,into=c("plate",NA),sep=" ",remove = F)%>%
+                  separate(Sample.Name,into = c("element_perturbed","rel_element_concentration_th"),sep=" ")%>%
                   mutate(rel_element_concentration_th = as.numeric(rel_element_concentration_th),
                          rel_element_concentration_th = ifelse(grepl("AllEle",element_perturbed),1,rel_element_concentration_th))%>%
                   reshape2::melt(id.vars=c("normalization","plate_position","plate","element_perturbed","rel_element_concentration_th" ),
@@ -310,7 +303,8 @@ Sample_data_n <- rbind(Sam_Pnorm, Sample_df_LOQfilt_cast[,c(colnames(Sam_Pnorm))
 ### Merge with OD ###
 #####################
 
-od_data <- read.csv(paste0(od_dir,"/OD_at_sampling_metallomics.csv"),stringsAsFactors = F)
+od_data <- read.csv(paste0(od_dir,"/OD_at_sampling_metallomics.csv"),stringsAsFactors = F)%>%
+           mutate(lop = gsub("_"," ",lop))
 
 ##################################
 ### Convert PPB to ng per cell ###
@@ -639,8 +633,7 @@ AE_ngperwell_vals <- Sample_data_finalised%>%
 
 metallomics_AEnorm <- merge(metallomics,AE_ngperwell_vals[,c("element_measured","mean_ng_perwell_BC_AE")],by="element_measured")%>%
                       mutate(Percentage_Change_ngpwell = (ng_perwell_BC-mean_ng_perwell_BC_AE)/mean_ng_perwell_BC_AE,
-                             Ratio_to_AEngperwell = ng_perwell_BC/mean_ng_perwell_BC_AE,
-                             BioSpecID = gsub("_"," ",BioSpecID))%>%
+                             Ratio_to_AEngperwell = ng_perwell_BC/mean_ng_perwell_BC_AE)%>%
                       na.omit()
 
 buffering_df_allpoints <- metallomics_AEnorm %>%
@@ -692,5 +685,5 @@ for_metallica_app <- metallomics_AEnorm%>%
                      dplyr::select(BioSpecID, element_perturbed,rel_element_concentration_actual,
                                    element_measured,ng_perwell_BC,mean_ng_perwell_BC_AE,Ratio_to_AEngperwell
                                    )
-write.csv(for_metallica_app,paste0(metallica_app_dir,"/metallomica_app_metallomicsdata.csv"),row.names = F)
+write.csv(for_metallica_app,paste0(metallica_app_dir,"/metallica_app_metpertWTmetallomics.csv"),row.names = F)
 

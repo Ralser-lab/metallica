@@ -254,6 +254,8 @@ for (i in seq_along(patterns)) {
   conc_axis_df$media <- gsub(pattern = patterns[i], replacement = replacements[i], x = conc_axis_df$media)
 }
 
+conc_axis_df$media = gsub("_", " ", conc_axis_df$media)
+
 colnames(conc_axis_df) <- c("metal","BioSpecID","element_concentration","actual_AEnorm_conc")
 
 write.csv(conc_axis_df,paste0(outputtables_dir,"/measured_element_concentration_axis.csv"),row.names=F)
