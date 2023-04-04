@@ -23,7 +23,6 @@ source(paste0(code_dir,"/metpert_WTmetallomics/metallomics_0_libraries_functions
 # inputs
 icpms_data_dir <- paste0(metpert_WTmetallomics_dir,"/data_from_agilent_masshunter/intracellular_metallomics")
 od_dir <- paste0(metpert_WTmetallomics_dir,"/od600_at_sampling")
-lo_dir <- paste0(metpert_WTmetallomics_dir,"/layouts_96wellplates/intracellular_icpms_layouts")
 
 # outputs
 plot_dir <- paste0(metpert_WTmetallomics_dir,"/results/plots/intracellular_metallomics")
@@ -56,7 +55,7 @@ Blank_df <- metallomics_data %>%
 Sample_df <- as.data.frame(metallomics_data) %>%
               filter(grepl("P3-",SampleName))%>%
               mutate(SampleName=gsub("P3-","",SampleName))%>%
-              mutate(Plate_Position = paste(LO,SampleName,sep = "_"))
+              mutate(plate_position = paste(LO,SampleName,sep = "_"))
 
 ###################################
 ### Subtract blank from samples ###
@@ -110,49 +109,32 @@ for(i in 1:nrow(Sample_df)){
 
 lo_fns <- dir(lo_dir)
 
-layouts_allplates<-vector()
-
-for( i in 1:length(lo_fns)){
-  
-  Layout <- read.csv(paste0(lo_dir,"/",lo_fns[i]))
-  colnames(Layout) <- c("Row",1:12)
-  Layout_melted <- na.omit(reshape2::melt(Layout,id.vars = c("Row")))
-  Layout_melted$Position <- paste0(Layout_melted$Row,Layout_melted$variable)
-  Layout_melted <- Layout_melted[,-c(1,2)]
-  colnames(Layout_melted) <- c("Condition.or.Strain","Position")
-  Layout_melted$Plate <- i
-  
-  layouts_allplates <- rbind(layouts_allplates,Layout_melted)
-  
-}
-
-layouts_allplates$Plate_Position <- paste(layouts_allplates$Plate,layouts_allplates$Position,sep="_")
-layouts_allplates<-layouts_allplates %>%
-  mutate(Condition.or.Strain = gsub ("Empty","ProcessBlank",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("AllEle_prepQC","ProcessBlank", Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("AllEle_New","AllEle", Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("0x","0",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/5000","_0.005",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/1000","_0.001",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/100","_0.01",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/50","_0.02",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/20","_0.05",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/10","_0.10",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/5","_0.20",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_x/2","_0.5",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_2x","_2",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub ("_5x","_5",Condition.or.Strain))%>%
-  mutate(Condition.or.Strain = gsub("AllEle","AllEle_1",Condition.or.Strain))%>%
-  dplyr::select(-c(Position))
+layouts_allplates <- read.csv(paste0(acc_file_dir,"/all_layouts_combined.csv"),stringsAsFactors = F)%>%
+                     mutate(condition = gsub ("Empty","ProcessBlank",condition))%>%
+                     mutate(condition = gsub ("AllEle_prepQC","ProcessBlank", condition))%>%
+                     mutate(condition = gsub ("AllEle_New","AllEle", condition))%>%
+                     mutate(condition = gsub ("0x","0",condition))%>%
+                     mutate(condition = gsub ("_x/5000","_0.005",condition))%>%
+                     mutate(condition = gsub ("_x/1000","_0.001",condition))%>%
+                     mutate(condition = gsub ("_x/100","_0.01",condition))%>%
+                     mutate(condition = gsub ("_x/50","_0.02",condition))%>%
+                     mutate(condition = gsub ("_x/20","_0.05",condition))%>%
+                     mutate(condition = gsub ("_x/10","_0.10",condition))%>%
+                     mutate(condition = gsub ("_x/5","_0.20",condition))%>%
+                     mutate(condition = gsub ("_x/2","_0.5",condition))%>%
+                     mutate(condition = gsub ("_2x","_2",condition))%>%
+                     mutate(condition = gsub ("_5x","_5",condition))%>%
+                     mutate(condition = gsub("AllEle","AllEle_1",condition))%>%
+                     dplyr::select(-c(position))
 
 #####################################
 ### Add Sample Names to Sample df ###
 #####################################
 
-Sample_df$SampleName=layouts_allplates[match(Sample_df$Plate_Position,layouts_allplates$Plate_Position),"Condition.or.Strain"]
+Sample_df$SampleName <- layouts_allplates[match(Sample_df$plate_position,layouts_allplates$plate_position),"condition"]
 
 Sample_df <- Sample_df%>%
-              filter(!Plate_Position %in% c("2_F2","2_C2","1_C6","2_F1",
+              filter(!plate_position %in% c("2_F2","2_C2","1_C6","2_F1",
                                             "2_B2","2_E2",
                                             "4_F8","6_D2",
                                             # Filter out old Fe media in plate 6
@@ -172,13 +154,13 @@ Sample_df <- Sample_df%>%
 
 ProcessBlank_df <- Sample_df%>%
                     filter(SampleName == "ProcessBlank")%>%
-                    filter(grepl("H",Plate_Position) | grepl("A",Plate_Position))%>%
+                    filter(grepl("H",plate_position) | grepl("A",plate_position))%>%
                     mutate(Type = SampleName)%>%
-                    dplyr::select(-c(SampleName,Plate_Position))
+                    dplyr::select(-c(SampleName,plate_position))
 
 Sample_df <- Sample_df%>%
               filter(SampleName != "ProcessBlank" & !grepl("Ca_10",SampleName))%>%
-              filter(!(grepl("C1",Plate_Position)|grepl("D1",Plate_Position)|grepl("E1",Plate_Position)))
+              filter(!(grepl("C1",plate_position)|grepl("D1",plate_position)|grepl("E1",plate_position)))
 
 BlPrBlQC_df <- rbind(ProcessBlank_df,BlankQC_df)%>%
                reshape2::melt(id.vars=c("Type","LO"),value.name = "CPS",variable.name="element_measured")
@@ -226,32 +208,32 @@ dev.off()
 # Save LOQ df from QC stats df
 
 LOQ_df <- BlPrBlQC_Stat %>%
-  dplyr::select(LO,element_measured,LOQ)%>%
-  na.omit()
+          dplyr::select(LO,element_measured,LOQ)%>%
+          na.omit()
 
 Sample_df_long <- Sample_df %>%
-  reshape2::melt(id.vars=c("LO","SampleName","Plate_Position"),
-                 variable.name="element_measured", value.name = "CPS")
+                  reshape2::melt(id.vars=c("LO","SampleName","plate_position"),
+                                 variable.name="element_measured", value.name = "CPS")
 
 # Print number of samples before LOQ based filtering
 paste("Number of samples BEFORE LOQ filter:",length(unique(paste(Sample_df$SampleName,
-                                                                 Sample_df$Plate_Position))))
+                                                                 Sample_df$plate_position))))
 
 Sample_df_LOQfilt <- merge(Sample_df_long, LOQ_df,by=c("LO","element_measured"))%>%
-  filter(CPS > LOQ)%>%
-  mutate(Type ="Samples")
+                     filter(CPS > LOQ)%>%
+                     mutate(Type ="Samples")
 
 paste("Number of samples AFTER LOQ filter:",length(unique(paste(Sample_df_LOQfilt$SampleName,
-                                                                Sample_df_LOQfilt$Plate_Position))))
+                                                                Sample_df_LOQfilt$plate_position))))
 
 ####################################################################
 ### Combine Blanks, Process Blanks and QC with Process Blank data ###
 ####################################################################
 
 BlPrBlQC_df_LOQ <- merge(BlPrBlQC_df,LOQ_df,by=c("LO","element_measured"))%>%
-  # Filter out QCs that are below LOQ
-  filter( Type != "QC" | CPS > LOQ)%>%
-  mutate(SampleName = Type)
+                    # Filter out QCs that are below LOQ
+                   filter( Type != "QC" | CPS > LOQ)%>%
+                   mutate(SampleName = Type)
 
 
 AllData_LOQ_filt <- rbind(Sample_df_LOQfilt[,c("LO","element_measured","SampleName","Type","CPS","LOQ")],
@@ -284,10 +266,10 @@ dev.off()
 ######################
 
 Sample_df_LOQfilt_cast <- Sample_df_LOQfilt %>%
-                          dplyr::select(Plate_Position,SampleName,element_measured,CPS)%>%
-                          reshape2::dcast(Plate_Position+SampleName ~ element_measured, value.var ="CPS")
+                          dplyr::select(plate_position,SampleName,element_measured,CPS)%>%
+                          reshape2::dcast(plate_position+SampleName ~ element_measured, value.var ="CPS")
 
-rownames(Sample_df_LOQfilt_cast) <- paste(Sample_df_LOQfilt_cast$Plate_Position,Sample_df_LOQfilt_cast$SampleName)
+rownames(Sample_df_LOQfilt_cast) <- paste(Sample_df_LOQfilt_cast$plate_position,Sample_df_LOQfilt_cast$SampleName)
 Sample_df_LOQfilt_cast_for_Norm <- Sample_df_LOQfilt_cast[,-c(1,2)]
 
 Sam_Pnorm <- Sample_df_LOQfilt_cast_for_Norm/Sample_df_LOQfilt_cast_for_Norm$P
@@ -303,10 +285,10 @@ scaling <- rep(scaling,ncol(Sam_Pnorm))
 
 Sam_Pnorm <- sweep(as.matrix(Sam_Pnorm), 2, scaling, FUN="*")
 Sam_Pnorm <- as.data.frame(Sam_Pnorm)
-Sam_Pnorm$Normalization <- "Phosphorus"
+Sam_Pnorm$normalization <- "Phosphorus"
 Sam_Pnorm$Sample.Name <- rownames(Sam_Pnorm)
 
-Sample_df_LOQfilt_cast$Normalization <- "Unnormalized"
+Sample_df_LOQfilt_cast$normalization <- "Unnormalized"
 Sample_df_LOQfilt_cast$Sample.Name <- rownames(Sample_df_LOQfilt_cast)
 
 ###############
@@ -315,12 +297,12 @@ Sample_df_LOQfilt_cast$Sample.Name <- rownames(Sample_df_LOQfilt_cast)
 
 Sample_data_n <- rbind(Sam_Pnorm, Sample_df_LOQfilt_cast[,c(colnames(Sam_Pnorm))])%>%
                   filter(!grepl("_o",Sample.Name))%>%
-                  separate(Sample.Name, into = c("Plate_Position","Sample.Name"), sep = " ")%>%
-                  separate(Plate_Position,into=c("Plate",NA),sep="_",remove = F)%>%
+                  separate(Sample.Name, into = c("plate_position","Sample.Name"), sep = " ")%>%
+                  separate(plate_position,into=c("plate",NA),sep="_",remove = F)%>%
                   separate(Sample.Name,into = c("element_perturbed","rel_element_concentration_th"),sep="_")%>%
                   mutate(rel_element_concentration_th = as.numeric(rel_element_concentration_th),
                          rel_element_concentration_th = ifelse(grepl("AllEle",element_perturbed),1,rel_element_concentration_th))%>%
-                  reshape2::melt(id.vars=c("Normalization","Plate_Position","Plate","element_perturbed","rel_element_concentration_th" ),
+                  reshape2::melt(id.vars=c("normalization","plate_position","plate","element_perturbed","rel_element_concentration_th" ),
                                  variable.name = "element_measured")
 
 
@@ -328,7 +310,7 @@ Sample_data_n <- rbind(Sam_Pnorm, Sample_df_LOQfilt_cast[,c(colnames(Sam_Pnorm))
 ### Merge with OD ###
 #####################
 
-od_data <- read.csv(paste0(od_dir,"/OD_at_sampling_metallomics.csv"))
+od_data <- read.csv(paste0(od_dir,"/OD_at_sampling_metallomics.csv"),stringsAsFactors = F)
 
 ##################################
 ### Convert PPB to ng per cell ###
@@ -336,9 +318,9 @@ od_data <- read.csv(paste0(od_dir,"/OD_at_sampling_metallomics.csv"))
 
 ConvFac <- read.csv(paste0(acc_file_dir,"/conversion_factors_ppb_to_ngpercell.csv"),stringsAsFactors = F)
 
-Sample_data_n <- merge(Sample_data_n,od_data, by.x="Plate_Position",by.y="lop")
+Sample_data_n <- merge(Sample_data_n,od_data, by.x="plate_position",by.y="lop")
 
-Sample_data_n <- merge(Sample_data_n,ConvFac,by.x="Plate",by.y="Layout")%>%
+Sample_data_n <- merge(Sample_data_n,ConvFac,by.x="plate",by.y="Layout")%>%
                  filter(SpecOD > 0.1)%>%
                  mutate(ng_perwell = (value * Final_Vol_for_ICPMS))%>%
                  mutate(pg_percell = (ng_perwell*1000)/
@@ -349,8 +331,8 @@ Sample_data_n <- merge(Sample_data_n,ConvFac,by.x="Plate",by.y="Layout")%>%
 #####################################
 
 pdf(paste0(plot_dir,"/batch_effects_pgpercell_data_BEFORE_correction.pdf"),width=20,height=15)
-ggplot(filter(Sample_data_n,element_perturbed=="AllEle" & Normalization =="Phosphorus"),
-       aes(x = Plate, y= pg_percell))+
+ggplot(filter(Sample_data_n,element_perturbed=="AllEle" & normalization =="Phosphorus"),
+       aes(x = plate, y= pg_percell))+
   geom_point()+
   facet_wrap("element_measured",scales="free")+
   theme_metallica()+
@@ -370,15 +352,15 @@ dev.off()
 
 AE_for_batchcorr <- Sample_data_n%>%
                     filter(element_perturbed == "AllEle")%>%
-                    group_by(Plate,Normalization,element_measured)%>%
+                    group_by(plate,normalization,element_measured)%>%
                     summarize(Median.pgpcell.AE.batch = median(pg_percell,na.rm=T),
                               Median.ngpwell.AE.batch = median(ng_perwell,na.rm=T))%>%
                     ungroup()%>%
-                    group_by(Normalization,element_measured)%>%
+                    group_by(normalization,element_measured)%>%
                     mutate(Median.pgpcell.Across.batches = median(Median.pgpcell.AE.batch,na.rm=T),
                            Median.ngpwell.Across.batches = median(Median.ngpwell.AE.batch,na.rm=T))
 
-Sample_data_n <- merge(Sample_data_n,AE_for_batchcorr,by=c("Plate","Normalization","element_measured"))%>%
+Sample_data_n <- merge(Sample_data_n,AE_for_batchcorr,by=c("plate","normalization","element_measured"))%>%
                   ## Batch correct and re-scale ##
                  mutate(pg_percell_BC = (pg_percell/Median.pgpcell.AE.batch)* Median.pgpcell.Across.batches,
                         ng_perwell_BC = (ng_perwell/Median.ngpwell.AE.batch)* Median.ngpwell.Across.batches)
@@ -386,8 +368,8 @@ Sample_data_n <- merge(Sample_data_n,AE_for_batchcorr,by=c("Plate","Normalizatio
 ## Visualize effects after batch correction
 
 pdf(paste0("batch_effects_pgpercell_data_AFTER_correction.pdf"),width=20,height=15)
-ggplot(filter(Sample_data_n,element_perturbed=="AllEle" & Normalization =="Phosphorus"),
-       aes(x = Plate,group=Plate))+
+ggplot(filter(Sample_data_n,element_perturbed=="AllEle" & normalization =="Phosphorus"),
+       aes(x = plate,group=plate))+
        geom_point(aes( y= pg_percell),
                    alpha=0.7,size=6,shape="*",
                    colour="black",
@@ -406,8 +388,8 @@ dev.off()
 ## Visualize effects after batch correction
 
 pdf(paste0(plot_dir,"/batch_effects_ngperwell_data_AFTER_correction.pdf"),width=20,height=15)
-ggplot(filter(Sample_data_n,element_perturbed=="AllEle" & Normalization =="Phosphorus"),
-       aes(x = Plate,group=Plate))+
+ggplot(filter(Sample_data_n,element_perturbed=="AllEle" & normalization =="Phosphorus"),
+       aes(x = plate,group=plate))+
   geom_point(aes( y= ng_perwell),
              alpha=0.7,size=6,shape="*",
              colour="black",
@@ -430,13 +412,13 @@ dev.off()
 
 AE_Unnorm_OD<- filter(Sample_data_n,
                       element_perturbed == "AllEle" &
-                      Normalization == "Unnormalized")
+                      normalization == "Unnormalized")
 
 pdf(paste0(plot_dir,"/allele_controls_OD_vs_elementconcentration_raw_to_pgpercellBC_unnormalized.pdf"), width=15,height=10)
 
 ggplot(AE_Unnorm_OD, aes(x = SpecOD, 
                          y= value,
-                         colour = Plate))+
+                         colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -445,7 +427,7 @@ ggplot(AE_Unnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Unnorm_OD, aes(x = SpecOD, 
                          y= ng_perwell,
-                         colour = Plate))+
+                         colour = plate))+
         geom_point(size=3,alpha=0.8)+  
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -454,7 +436,7 @@ ggplot(AE_Unnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Unnorm_OD, aes(x = SpecOD, 
                          y= ng_perwell_BC,
-                         colour = Plate))+
+                         colour = plate))+
         geom_point(size=3,alpha=0.8)+  
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -463,7 +445,7 @@ ggplot(AE_Unnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Unnorm_OD, aes(x = SpecOD, 
                          y= pg_percell,
-                         colour = Plate))+
+                         colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -472,7 +454,7 @@ ggplot(AE_Unnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Unnorm_OD, aes(x = SpecOD, 
                          y= pg_percell,
-                         colour = Plate))+
+                         colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -481,7 +463,7 @@ ggplot(AE_Unnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Unnorm_OD, aes(x = SpecOD, 
                          y= pg_percell_BC,
-                         colour = Plate))+
+                         colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -497,13 +479,13 @@ dev.off()
 
 AE_Pnorm_OD<- filter(Sample_data_n,
                      element_perturbed == "AllEle" &
-                     Normalization == "Phosphorus")
+                     normalization == "Phosphorus")
 
 pdf(paste0(plot_dir,"/allele_controls_OD_vs_elementconcentration_raw_to_pgpercellBC_phosphorus_normalized.pdf"), width=15,height=10)
 
 ggplot(AE_Pnorm_OD, aes(x = SpecOD, 
                         y= value,
-                        colour = Plate))+
+                        colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -512,7 +494,7 @@ ggplot(AE_Pnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Pnorm_OD, aes(x = SpecOD, 
                         y= ng_perwell,
-                        colour = Plate))+
+                        colour = plate))+
         geom_point(size=3,alpha=0.8)+  
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -521,7 +503,7 @@ ggplot(AE_Pnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Pnorm_OD, aes(x = SpecOD, 
                         y= ng_perwell_BC,
-                        colour = Plate))+
+                        colour = plate))+
         geom_point(size=3,alpha=0.8)+  
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -530,7 +512,7 @@ ggplot(AE_Pnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Pnorm_OD, aes(x = SpecOD, 
                         y= pg_percell,
-                        colour = Plate))+
+                        colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -540,7 +522,7 @@ ggplot(AE_Pnorm_OD, aes(x = SpecOD,
 
 ggplot(AE_Pnorm_OD, aes(x = SpecOD, 
                         y= pg_percell_BC,
-                        colour = Plate))+
+                        colour = plate))+
         geom_point(size=3,alpha=0.8)+
         geom_smooth(method="lm")+
         facet_wrap("element_measured",scales="free")+
@@ -551,14 +533,12 @@ dev.off()
 write.csv(Sample_data_n,paste0(outputtables_dir,"/metallomics_alldata_batchcorrected.csv"),row.names=F)
 
 Sample_data_finalised <- Sample_data_n%>%
-                      filter(Normalization == "Phosphorus" & element_perturbed != "B" & !element_measured %in% c("Cu","Mo"))%>%
-                      dplyr::select(element_measured,Plate_Position,element_perturbed,rel_element_concentration_th,
+                      filter(normalization == "Phosphorus" & element_perturbed != "B" & !element_measured %in% c("Cu","Mo"))%>%
+                      dplyr::select(element_measured,plate_position,element_perturbed,rel_element_concentration_th,
                                     SpecOD,ng_perwell_BC)
 
 
 write.csv(Sample_data_finalised,paste0(outputtables_dir,"/metallomics_ngperwell_Pnorm_finalized.csv"),row.names = F)
-
-write.csv(Sample_data_n_smry,paste0(outputtables_dir,"/metallomics_ngperwell_Pnorm_finalized_summary.csv"),row.names = F)
 
 #########################################################################
 ### Convert pg/cell to Atoms / cell and compare to published datasets ###
@@ -571,14 +551,14 @@ Sample_data_n <- merge(Sample_data_n,AtMass,by.x="element_measured",by.y="Elemen
 
 Atoms_percell_AllEle <- Sample_data_n %>%
                         filter(element_perturbed =="AllEle" )%>%
-                        dplyr::select(Atoms_percell,element_measured,Normalization,element_perturbed)%>%
-                        group_by(element_measured,Normalization)%>%
+                        dplyr::select(Atoms_percell,element_measured,normalization,element_perturbed)%>%
+                        group_by(element_measured,normalization)%>%
                         summarise(Mean_atoms_percell = mean(Atoms_percell,na.rm=T),
                                   SD_atoms_percell = sd(Atoms_percell,na.rm=T))%>%
                         ungroup()
 
 
-colnames(Atoms_percell_AllEle)[which(colnames(Atoms_percell_AllEle)=="Normalization")] <- "Study"
+colnames(Atoms_percell_AllEle)[which(colnames(Atoms_percell_AllEle)=="normalization")] <- "Study"
 
 ## Read in supplementary Data File 3 from CoFactor Yeast - has atoms/cell from various studies
 

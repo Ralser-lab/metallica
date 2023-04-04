@@ -10,6 +10,8 @@ code_dir <- paste0(proj_dir,"/code")
 db_dir <- paste0(proj_dir,"/databases")
 # directory for all previously published experimental data
 published_dataset_dir <- paste0(proj_dir,"/published_datasets")
+# metadata dir
+metadata_dir <- paste0(proj_dir,"/metadata")
 
 # experimental data and resuls directories
 metdep_hdPCA_dir <- paste0(proj_dir,"/experiment_data/metdep_hdPCA")
@@ -22,8 +24,10 @@ metpert_WTproteomics_dir <- paste0(proj_dir,"/experiment_data/metpert_WTproteomi
 #
 acc_file_dir <-paste0(proj_dir,"/accessory_files")
 
-# web app files
+# Layout directory
+lo_dir <- paste0(metadata_dir,"/layouts_96wellplates")
 
+# web app files
 metallica_app_dir <- paste0(proj_dir,"/webapp")
 
 
