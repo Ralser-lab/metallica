@@ -23,7 +23,6 @@ source(paste0(code_dir,"/metpert_WTmetallomics/metallomics_0_libraries_functions
 
 # inputs
 icpms_data_dir <- paste0(metpert_WTmetallomics_dir,"/data_from_agilent_masshunter/media_metallomics")
-lo_dir <- paste0(metpert_WTmetallomics_dir,"/layouts_96wellplates/media_icpms_layouts")
 
 # outputs
 plot_dir <- paste0(metpert_WTmetallomics_dir,"/results/plots/media_metallomics")
@@ -41,7 +40,7 @@ media_icpms_data <- data.frame()
 for( i in 1:4){
   
   pl <- read.csv(paste0(icpms_data_dir,"/data_media_icpms_from_AgilentMassHunter_plate",i,".csv") ,stringsAsFactors = F)
-  lo <- read.csv(paste0(lo_dir,"/layout_media_icpms_plate",i,"_wide.csv"),stringsAsFactors = F)
+  lo <- read.csv(paste0(lo_dir,"/media4icpms_layouts/layout_media_icpms_plate",i,"_wide.csv"),stringsAsFactors = F)
   
   colnames(lo) <- c("row",1:12)
   
