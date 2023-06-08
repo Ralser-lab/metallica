@@ -10,7 +10,7 @@
 #############################################
 
 # general
-source("/camp/lab/ralserm/working/Simran Aulakh/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
 
@@ -26,8 +26,8 @@ icpms_data_dir <- paste0(metpert_WTmetallomics_dir,"/data_from_agilent_masshunte
 od_dir <- paste0(metpert_WTmetallomics_dir,"/od600_at_sampling")
 
 # outputs
-plot_dir <- paste0(metpert_WTmetallomics_dir,"/results/plots/intracellular_metallomics")
-outputtables_dir <- paste0(metpert_WTmetallomics_dir,"/results/output_tables")
+plot_dir <- paste0(metpert_WTmetallomics_dir,"/output/plots/intracellular_metallomics")
+outputtables_dir <- paste0(metpert_WTmetallomics_dir,"/output/tables")
 
 dir.create(plot_dir, recursive = T)
 dir.create(outputtables_dir, recursive = T)
@@ -292,10 +292,10 @@ Sample_data_n <- rbind(Sam_Pnorm, Sample_df_LOQfilt_cast[,c(colnames(Sam_Pnorm))
                   filter(!grepl(" o",Sample.Name))%>%
                   separate(Sample.Name, into = c("plate_position","Sample.Name"), sep = "_")%>%
                   separate(plate_position,into=c("plate",NA),sep=" ",remove = F)%>%
-                  separate(Sample.Name,into = c("element_perturbed","rel_element_concentration_th"),sep=" ")%>%
-                  mutate(rel_element_concentration_th = as.numeric(rel_element_concentration_th),
-                         rel_element_concentration_th = ifelse(grepl("AllEle",element_perturbed),1,rel_element_concentration_th))%>%
-                  reshape2::melt(id.vars=c("normalization","plate_position","plate","element_perturbed","rel_element_concentration_th" ),
+                  separate(Sample.Name,into = c("element_perturbed","rel_env_element_concentration_th"),sep=" ")%>%
+                  mutate(rel_env_element_concentration_th = as.numeric(rel_env_element_concentration_th),
+                         rel_env_element_concentration_th = ifelse(grepl("AllEle",element_perturbed),1,rel_env_element_concentration_th))%>%
+                  reshape2::melt(id.vars=c("normalization","plate_position","plate","element_perturbed","rel_env_element_concentration_th" ),
                                  variable.name = "element_measured")
 
 
@@ -527,12 +527,14 @@ dev.off()
 write.csv(Sample_data_n,paste0(outputtables_dir,"/metallomics_alldata_batchcorrected.csv"),row.names=F)
 
 Sample_data_finalised <- Sample_data_n%>%
-                      filter(normalization == "Phosphorus" & element_perturbed != "B" & !element_measured %in% c("Cu","Mo"))%>%
-                      dplyr::select(element_measured,plate_position,element_perturbed,rel_element_concentration_th,
+                      filter(normalization == "Phosphorus" & element_perturbed != "B" & 
+                               !(element_measured == "Cu" & rel_env_element_concentration_th > 2) &
+                               element_measured != "Mo")%>%
+                      dplyr::select(element_measured,plate_position,element_perturbed,rel_env_element_concentration_th,
                                     SpecOD,ng_perwell_BC)
 
 
-write.csv(Sample_data_finalised,paste0(outputtables_dir,"/metallomics_ngperwell_Pnorm_finalized.csv"),row.names = F)
+write.csv(Sample_data_finalised,paste0(outputtables_dir,"/metallomics_ngperwell_Pnorm.csv"),row.names = F)
 
 #########################################################################
 ### Convert pg/cell to Atoms / cell and compare to published datasets ###
@@ -578,17 +580,18 @@ Atoms_percell_AllEle <- rbind(Atoms_percell_AllEle,published_atoms_percell[,coln
                                                       Study)),
                                 Pub_or_EPP = ifelse(Study =="This Study - P normalized","This Study",
                                                  ifelse(Study == "This Study - Unnormalized","This Study",
-                                                        "Other Study")))
+                                                        "Other Study")),
+                                element_measured = factor(element_measured, levels = c("Ca","Cu","Fe","K","Mg","Mn","Mo","Na","P","S","Zn")))
 
-pdf(paste0(plot_dir,"/atomspercell_comparison_with_published_data.pdf"),width=10,height=8)
+pdf(paste0(plot_dir,"/atomspercell_comparison_with_published_data.pdf"),width=9,height=6)
 ggplot(Atoms_percell_AllEle,
        aes(x=element_measured,
            y = log10(Mean_atoms_percell),
            colour = Study,
            group = Pub_or_EPP))+
   geom_point(aes(shape=Pub_or_EPP),
-             size=3,alpha=0.8,
-             position = position_jitterdodge(jitter.width = 0.3))+
+             size=4,alpha=0.8,
+             position = position_jitterdodge(jitter.width = 0.2))+
   scale_colour_manual(values = c(brewer.pal(8,"Dark2"), "black","darkred"))+
   theme_metallica()
 dev.off()
@@ -619,12 +622,12 @@ dev.off()
 meas_conc_axis <- read.csv(paste0(outputtables_dir,"/measured_element_concentration_axis.csv"),
                            stringsAsFactors = F)
 
-colnames(meas_conc_axis) <- c("element_perturbed","BioSpecID","rel_element_concentration_th","rel_element_concentration_actual")
+colnames(meas_conc_axis) <- c("element_perturbed","BioSpecID","rel_env_element_concentration_th","rel_env_element_concentration_actual")
 
 metallomics <- merge(Sample_data_finalised, meas_conc_axis,by.x=c("element_perturbed",
-                                                               "rel_element_concentration_th"),
+                                                               "rel_env_element_concentration_th"),
                                    by.y = c("element_perturbed",
-                                            "rel_element_concentration_th"), all.x = T)
+                                            "rel_env_element_concentration_th"), all.x = T)
                
 AE_ngperwell_vals <- Sample_data_finalised%>%
                      filter(element_perturbed == "AllEle")%>%
@@ -636,9 +639,11 @@ metallomics_AEnorm <- merge(metallomics,AE_ngperwell_vals[,c("element_measured",
                              Ratio_to_AEngperwell = ng_perwell_BC/mean_ng_perwell_BC_AE)%>%
                       na.omit()
 
+write.csv(metallomics_AEnorm,paste0(outputtables_dir,"/metpertWTmetallomics_Pnorm_AEnorm.csv"),row.names = F)
+
 buffering_df_allpoints <- metallomics_AEnorm %>%
                           filter(element_perturbed == element_measured)%>%
-                          group_by(BioSpecID, element_measured, rel_element_concentration_th,rel_element_concentration_actual)%>%
+                          group_by(BioSpecID, element_measured, rel_env_element_concentration_th,rel_env_element_concentration_actual)%>%
                           summarise(mean_Ratio_to_AEngperwell = mean(Ratio_to_AEngperwell,na.rm=T))%>%
                           ungroup()%>%
                           mutate(
@@ -648,12 +653,13 @@ buffering_df_allpoints <- metallomics_AEnorm %>%
                                                                   "Mg 0.05","Mg 0.1","Mg 0.2","Mg 0.5","Mg 2","Mg 5","Mg 10",
                                                                   "Fe 0","Fe 0.01","Fe 0.02","Fe 0.05","Fe 0.1","Fe 0.2","Fe 0.5","Fe 2","Fe 5","Fe 10","Fe 20","Fe 50",
                                                                   "Zn 0.01","Zn 0.02","Zn 0.05","Zn 0.1","Zn 0.2","Zn 0.5","Zn 2","Zn 5","Zn 10","Zn 20",
-                                                                  "Cu 0","Cu 0.01","Cu 0.02","Cu 0.05","Cu 0.1","Cu 0.2","Cu 0.5","Cu 2",
                                                                   "Ca 0","Ca 0.01","Ca 0.02","Ca 0.05","Ca 0.1","Ca 0.2","Ca 0.5","Ca 2","Ca 5",
+                                                                  "Cu 0","Cu 0.01","Cu 0.02","Cu 0.05","Cu 0.1","Cu 0.2","Cu 0.5","Cu 2",
                                                                   "Mn 0","Mn 0.01","Mn 0.02","Mn 0.05","Mn 0.1","Mn 0.2","Mn 0.5","Mn 2","Mn 5","Mn 10","Mn 20","Mn 50","Mn 100",
                                                                   "Mo 0.2","Mo 0.5","Mo 2"
                                                               )))
 
+write.csv(buffering_df_allpoints,paste0(outputtables_dir,"/metallomics_buffering_summary.csv"), row.names = F)
 
 pdf(paste0(plot_dir,"/metal_buffering.pdf"),width=13,height=6)
 
@@ -661,10 +667,10 @@ ggplot(buffering_df_allpoints,
        aes(x=BioSpecID,
            colour = BioSpecID,
            group = BioSpecID))+
-  geom_segment( aes(x=BioSpecID, xend=BioSpecID, y=log2(rel_element_concentration_actual), 
+  geom_segment( aes(x=BioSpecID, xend=BioSpecID, y=log2(rel_env_element_concentration_actual), 
                     yend=log2(mean_Ratio_to_AEngperwell)),
                 alpha=0.8)+ 
-  geom_point( aes(x=BioSpecID, y=log2(rel_element_concentration_actual)), size=3.5,alpha=0.8) +
+  geom_point( aes(x=BioSpecID, y=log2(rel_env_element_concentration_actual)), size=3.5,alpha=0.8) +
   geom_point( aes(x=BioSpecID, y=log2(mean_Ratio_to_AEngperwell)),size=3,shape=8,colour="black") +
   scale_color_manual(values = colkey_BioSpecID)+
   theme_metallica()+
@@ -677,13 +683,78 @@ ggplot(buffering_df_allpoints,
 
 dev.off()
 
+#################################
+### metal- metal correlations ###
+#################################
+
+for_metmet_correlation <- metallomics_AEnorm%>%
+                          dplyr::select(element_measured, element_perturbed,rel_env_element_concentration_actual,Ratio_to_AEngperwell)%>%
+                          filter(!element_measured %in% c("P","S"))
+
+# Apply the function for each unique pair of element_measured & element_perturbed
+metmet_correlations <- for_metmet_correlation %>%
+  group_by(element_measured, element_perturbed) %>%
+  nest() %>%
+  mutate(correlation = map(data, compute_correlation_and_pvalue)) %>%
+  unnest(correlation)%>%
+  ungroup()
+
+# Create a matrix for pearson correlations, spearman correlations and their p-values
+create_correlation_matrix <- function(df, value) {
+  matrix <- df %>%
+    select(element_measured, element_perturbed, value) %>%
+    spread(element_perturbed, value) %>%
+    column_to_rownames("element_measured") %>%
+    as.matrix()
+  
+  # Order the matrix and transpose
+  matrix <- matrix[order(rownames(matrix)), order(colnames(matrix))]
+  return(t(matrix))
+}
+
+pearson_matrix <- create_correlation_matrix(metmet_correlations, "pearson")
+p_value_pearson_matrix <- create_correlation_matrix(metmet_correlations, "p_value_pearson")
+spearman_matrix <- create_correlation_matrix(metmet_correlations, "spearman")
+p_value_spearman_matrix <- create_correlation_matrix(metmet_correlations, "p_value_spearman")
+
+# Get the RdBu palette and reverse it
+col <- rev(corrplot::COL2("RdBu", n = 200))
+
+pdf(paste0(plot_dir,"/metalperturbed_metalmeasured_correlations.pdf"), width = 6.5, height = 5.5)
+
+# Draw the correllogram for pearson correlations
+pearson_plot <- corrplot(pearson_matrix, p.mat = p_value_pearson_matrix, sig.level = 0.05, insig = "label_sig",
+                         method = "ellipse", type = "full", title = "Pearson Correlation",
+                         tl.col = "black", tl.srt = 0, col = col, cl.pos = "r",na.label = "-")
+grid.text("element_perturbed", x = 0.01, y = 0.5, rot = 90) # y-axis title
+grid.text("element_measured", x = 0.5, y = 0.01) # x-axis title
+
+# Draw the correllogram for spearman correlations
+spearman_plot <- corrplot(spearman_matrix, p.mat = p_value_spearman_matrix, sig.level = 0.05, insig = "label_sig",
+                          method = "ellipse", type = "full", title = "Spearman Correlation",
+                          tl.col = "black", tl.srt = 0, col = col, cl.pos = "r", na.label ="-")
+grid.text("element_perturbed", x = 0.01, y = 0.5, rot = 90) # y-axis title
+grid.text("element_measured", x = 0.5, y = 0.01) # x-axis title
+
+dev.off()
+
+## write metal-metal correlations to file
+
+write.csv(metmet_correlations[,-3], paste0(outputtables_dir,"/metalperturbed_metalmeasured_correlations.csv"),row.names = F)
+
+
 ####################################################
 ### write data with replicates for metallica app ###
 ####################################################
 
 for_metallica_app <- metallomics_AEnorm%>%
-                     dplyr::select(BioSpecID, element_perturbed,rel_element_concentration_actual,
-                                   element_measured,ng_perwell_BC,mean_ng_perwell_BC_AE,Ratio_to_AEngperwell
-                                   )
+                     mutate(`metal_perturbed` = element_perturbed,
+                             `relative_environmental_concentration` = rel_env_element_concentration_actual,
+                             `metal_measured`= element_measured,
+                             `relative_intracellular_concentration` = Ratio_to_AEngperwell)%>%
+                    dplyr::select(BioSpecID,`metal_perturbed`,`relative_environmental_concentration`,
+                                  `metal_measured`,`relative_intracellular_concentration`)
+
+                   
 write.csv(for_metallica_app,paste0(metallica_app_dir,"/metallica_app_metpertWTmetallomics.csv"),row.names = F)
 
