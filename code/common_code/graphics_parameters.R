@@ -1,6 +1,7 @@
 library(showtext)
 library(viridis)
-
+library(ggplot2)
+library(ggrepel)
 font_add_google("Tinos")
 showtext_auto()
 
@@ -278,23 +279,28 @@ write.csv(cbio,paste0(acc_file_dir,"/EPP_Colourkey_BioSpecID.csv"),row.names = F
 ### Colour Key for Datasets ###
 ###############################
 
-dataset_colkey <- c("Meas_in_any" = "#EEDC82",
-               "Hit_in_any"  = 	"#B0171F",
-               "SGD_anno_unchar" = "#CDCDC1",
-                "In_GO_MF" = "#9BCD9B",
-               "In_MetPDBessmet" = "#DDA0DD" ,
-               "In_KOgrowth" = "#CD8500",
-               "In_hdPCA" = "#A2CD5A",
-               "In_proteomics"= "#104E8B")
+colkey_dataset_type <- c("KOgrowth" = "#FFD39B",
+                     "metallomics" = "#EEA9B8",
+                     "metallomics" = "#EEA9B8",
+                     "proteomics" = "#6495EDB3",
+                     "proteomics" = "#6495EDB3")
+  
+colkey_dataset <-  c("metdepKOgrowth" = "#FFD39BB3",
+                     "KOmetallomics" = "#FFB6C1B3",
+                     "OEmetallomics" = "#DB7093B3",
+                     "y5kmetalspecific" = "#BCD2EEB3",
+                      "metpertWTproteomics" = "#3A5FCDB3")
+  
+## colkey_datasets_circos <- c("Meas_in_any" = "#EEDC82","Hit_in_any"  = 	"#B0171F", "SGD_anno_unchar" = "#CDCDC1", "In_GO_MF" = "#9BCD9B","In_MetPDBessmet" = "#DDA0DD" ,"In_KOgrowth" = "#CD8500","In_hdPCA" = "#A2CD5A","In_proteomics"= "#104E8B")
 
-dataset_colkey_darker <- c("Meas_in_any" = "#EEC900",
-                    "Hit_in_any"  = 	"#B0171F",
-                    "SGD_anno_unchar" = "#CDCDC1",
-                    "In_GO_MF" = "#9BCD9B",
-                    "In_MetPDBessmet" = "#DDA0DD" ,
-                    "In_KOgrowth" = "#CD8500",
-                    "In_hdPCA" = "#A2CD5A",
-                    "In_proteomics"= "#104E8B")
+#colkey_datasets_circos_darker <- c("Meas_in_any" = "#EEC900",
+#                    "Hit_in_any"  = 	"#B0171F",
+ #                   "SGD_anno_unchar" = "#CDCDC1",
+  #                  "In_GO_MF" = "#9BCD9B",
+   #                 "In_MetPDBessmet" = "#DDA0DD" ,
+    #                "In_KOgrowth" = "#CD8500",
+     #               "In_hdPCA" = "#A2CD5A",
+      #              "In_proteomics"= "#104E8B")
 
 
 

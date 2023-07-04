@@ -33,14 +33,14 @@ source(paste0(code_dir,"/metpert_WTproteomics/metpertWTproteomics_0_libraries_fu
 outputtables_dir <-paste0(metpert_WTproteomics_dir,"/output/tables/GSA")
 dir.create(outputtables_dir, recursive = T)
 
-plot_dir <- paste0(metpert_WTproteomics_dir,"/output/plots/extracellularconc_vs_proteinabundance/lmfits/gsea_piano")
+plot_dir <- paste0(metpert_WTproteomics_dir,"/output/plots/comparison_extra_vs_intra/lmfits/gsea_piano")
 dir.create(plot_dir, recursive = T)
 
 ###########################################################################################################################
 ### Read in results of statistical model fits - both intracellular and extracellular concentration vs protein abundance ###
 ###########################################################################################################################
 
-lmfit_envconcVsprotabun_DAres <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/lmfit DE res with PQ and SigNotSig AdjPVthresh 0.05 FCthresh 1.5.csv"),
+lmfit_envconcVsprotabun_DAres <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/extracellularconc_vs_proteinabundance/lmfit DE res with PQ and SigNotSig AdjPVthresh 0.05 FCthresh 1.5.csv"),
                                           stringsAsFactors = F)
 
 lmfit_intrametconcVsprotabun_DAres <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/intracellularconc_vs_proteinabundance/lmfit_intracellular_metalconc_vs_log2PQ_with_SigNotSig_AdjPVthresh_0.05_FCthresh_1.5.csv"),
@@ -61,7 +61,7 @@ run_elewise_hyperGSA <- function(hits_df,type_of_lmresults){
   
   ele_HyperGSA_res_df <- data.frame()
   
-  eles <- unique(hits_df$Element)
+  eles <- hits_df$Element
   
   for(e in 1:length(eles)){
     
@@ -88,24 +88,36 @@ run_elewise_hyperGSA <- function(hits_df,type_of_lmresults){
   # Loop over unique Gset.Type
   for(gs in gsetnames) {
     
-    sn <- make_twocolumn_Sankey_plot(ele_HyperGSA_res_df, gs)
+    sn <- plot_twocolumn_Sankey(ele_HyperGSA_res_df, gs)
     
     htmlwidgets::saveWidget(as_widget(sn), paste0(plot_dir,"/HyperGSA/elewise/HyperGSA_ele_",type_of_lmresults,"_Sankey",gs,".html"))
   }
+  
+  return(ele_HyperGSA_res_df)
 }
 
-run_elewise_hyperGSA(intra_hits_df,"intrametVsprotabun")
-run_elewise_hyperGSA(extra_hits_df,"extrametVsprotabun")
+intracell_hits_HyperGSAres <- run_elewise_hyperGSA(intra_hits_df,"intrametVsprotabun")
+extracell_hits_HyperGSAres<- run_elewise_hyperGSA(extra_hits_df,"extrametVsprotabun")
 
-###############################################################################################################################################
-#################  Enrichments on whole ranked vector per element -i.e. which proteins go up vs down in each metal ############################
-###############################################################################################################################################
+##############################################################################################################################
+### Make a combined 3 column Sankey plot of enrichments in proteins DA along intracellular and extracellular conc gradients###
+##############################################################################################################################
 
-
-max_change_per_metal_df <- lmfit_envconcVsprotabun_DAres %>%
-                       dplyr::select(Element, ORF, Genes, MaxMag_LogFC)%>%
-                       unique()
+all_hits_HyperGSAres <- rbind(intracell_hits_HyperGSAres,extracell_hits_HyperGSAres)%>%
+                        filter(!Gset.Term.Enriched %in% c("biological_process"))
 
 
+enriched_gsnames <- unique(all_hits_HyperGSAres$Gset.Type)
 
+# Loop over unique Gset.Type
 
+for(gs in 1:length(enriched_gsnames)){
+  
+  if(enriched_gsnames[gs] %in% gsetnames){
+      sn <- plot_threecolumn_Sankey(all_hits_HyperGSAres, enriched_gsnames[gs])
+      htmlwidgets::saveWidget(as_widget(sn), paste0(plot_dir,"/HyperGSA/elewise/HyperGSA_ele_extint_Sankey",enriched_gsnames[gs],".html"))
+      plotly::export(sn, file = paste0(plot_dir,"/HyperGSA/elewise/HyperGSA_ele_extint_Sankey",enriched_gsnames[gs],".pdf"))
+      
+  }
+
+}

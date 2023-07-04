@@ -38,20 +38,20 @@ fix_colnames <-  function(x){
   return(unlist(strsplit(x,split="[.]"))[[1]] )
 }
 
-metdepKOgrowth_data <- read.csv(paste0(metdep_KOgrowth_dir,"/pyphe/pyphe-interpret_reps.csv"),stringsAsFactors = F, row.names = 1)
+metdepKOgrowth_data <- data.table::fread(paste0(metdep_KOgrowth_dir,"/pyphe/pyphe-interpret_reps.csv"),sep = ",",stringsAsFactors = F)
 
 conditions = unlist(lapply(X = colnames(metdepKOgrowth_data), FUN = fix_colnames))
 
 colnames(metdepKOgrowth_data) <- paste(conditions, metdepKOgrowth_data[1,])
-
-metdepKOgrowth_data$ORF <- rownames(metdepKOgrowth_data)
+metdepKOgrowth_data <- metdepKOgrowth_data[-1,]
+metdepKOgrowth_data$ORF <- metdepKOgrowth_data[,1]
 
 metdepKOgrowth_data <-metdepKOgrowth_data[-c(1:2),]%>%
                       reshape2::melt(id.vars = c("ORF"),value.name = "normalised_colony_size")%>%
                       separate(variable, into = c("condition", "replicate"),sep = " ")%>%
                       filter(!condition %in% c("B","Ca_EGTA","EGTA","EDTA","NE") & !ORF %in% c("DNG","CONT","his3_grid","his3_extraGrid"))
 
-slack
+
 metdepKOgrowth_statres <- read.csv(paste0(metdep_KOgrowth_dir,"/pyphe/pyphe-interpret_summaryStats.csv"),stringsAsFactors = F,
                                    row.names = 1)
 

@@ -219,3 +219,27 @@ convert_Uniprot2singleORF <- function(x){
   
 }
 
+## convert KEGG reaction ID to list of KEGG pathway
+
+library(KEGGREST)
+
+# Define function
+convert_KEGGrxnID2pathwaylist <- function(reaction_id) {
+  # Use tryCatch to handle potential errors
+  tryCatch({
+    # Use KEGGREST to get reaction information
+    reaction_info <- KEGGREST::keggGet(reaction_id)
+    
+    # Extract the pathway IDs from the reaction information
+    pathways <- reaction_info[[1]]$PATHWAY
+    
+    # Return a named vector of pathways
+    return(pathways)
+  }, error = function(e) {
+    # In case of an error, return a message indicating the problem
+    message("Error with reaction id: ", reaction_id, ". ", e)
+    return(NULL)
+  })
+}
+
+

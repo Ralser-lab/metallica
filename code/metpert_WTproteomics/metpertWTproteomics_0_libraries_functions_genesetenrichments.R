@@ -7,7 +7,7 @@ library(piano)
 library(visNetwork)
 
 
-get_plot_HyperGSA<-function(forHyperGSA,EnrichPV_thresh=0.05,
+run_HyperGSA<-function(forHyperGSA,EnrichPV_thresh=0.05,
                             gsLim_low=3,gsLim_high=400,
                             gsLim_low_reacGEM = 3,
                             gsLim_high_reacGEM = 100
@@ -68,160 +68,32 @@ get_plot_HyperGSA<-function(forHyperGSA,EnrichPV_thresh=0.05,
       if(nrow(enrch.gsets) > 1 ){
         All_gsets_HyperGSAres<-rbind(All_gsets_HyperGSAres,enrch.gsets)
       }
-      
-
-      
     }
   }
   return(All_gsets_HyperGSAres)
-}
-
-
-
-get_plot_StoufferGSA <- function (df_forStouffer,plotname,EnrichPV_thresh=0.05){
-  
-  registerDoParallel(cores=length(gsets))
-  ## Function to run Stouffer method on df with ORFs, qvalues (adjusted pvalues ) and log2fc 
-  
-  # Input dataframe should have :
-  # Column 1 : ORF
-  # Column 2 : Qvalues ( adjusted p values or only pvalues if you want to run it without multiple testing correction )
-  # Column 3 : log(Fold Change) - vs your control condition or median / mean of all
-  
-  ###############################################
-  # Run GSA with Stouffer method # Paralellized #
-  ###############################################
-  colnames(df_forStouffer) <- c("ORF","pv.Adj","Log2FC")
-  ORF_meas_universe = unique(df_forStouffer$ORF)
-  
-  # Create the ranking statistics
-  df_forStouffer$rank_stat <- -log10(df_forStouffer$pv.Adj) * sign(df_forStouffer$Log2FC)
-  
-  rank_vector <- df_forStouffer$rank_stat
-  names(rank_vector) <- df_forStouffer$ORF
-  
-  All_gsets_Stoufferres <- foreach(gs = 1:length(gsets), .combine=rbind) %dopar%{
-    
-    get_Stouffer_enrichments <- function(gset,df_forStouffer){
-      
-      gsc.forEnrich <- loadGSC(gsets[[gs]])
-      
-      res.Stouffer <- runGSA(geneLevelStats = rank_vector,
-                             geneSetStat = "stouffer",
-                             gsc = gsc.forEnrich,
-                             adjMethod = "BH")
-      
-      StouffResTab <- GSAsummaryTable(res.Stouffer)[,c(1,2,5,8)]
-      colnames(StouffResTab)=c("Gset.Term.Enriched","Gene.Set.Size",
-                               "pAdj_disdir_up","pAdj_disdir_down")
-      
-      StouffResTab$Gset.Type <- gsetnames[gs]
-      
-      if(nrow(StouffResTab)==0){
-        dfE=cbind("No Significant Results",NA,NA,NA,gsetnames[gs])
-        colnames(dfE)=c("Gset.Term.Enriched","Gene.Set.Size",
-                        "pAdj_disdir_up","pAdj_disdir_down",
-                        "Gset.Type")
-      }
-      
-      return(StouffResTab)
-    }
-    gset_2func=gsets[[gs]]
-    
-    data.frame(get_Stouffer_enrichments(gset_2func,df_forStouffer))
-    
-  }
-  return(All_gsets_Stoufferres)
-}
-
-### fgsea 
-get_plot_fgseaGSA <- function (df_forfgsea,plotname,EnrichPV_thresh=0.05){
-  
-  registerDoParallel(cores=length(gsets))
-  
-  # Set column names
-  colnames(df_forfgsea) <- c("ORF","Log2FC","p_value")
-  
-  # Create a named vector from the fold change, with gene IDs as names, and rank them
-  rank_vector <- df_forfgsea$Log2FC
-  names(rank_vector) <- df_forfgsea$ORF
-  
-  # Rank the vector in decreasing order
-  rank_vector <- rank_vector[order(rank_vector, decreasing = TRUE)]
-  
-  ORF_meas_universe = unique(df_forfgsea$ORF)
-  
-  All_gsets_fgseares <- foreach(gs = 1:length(gsets), .combine=rbind) %dopar%{
-    
-    get_fgsea_enrichments <- function(gset,df_forfgsea){
-      
-      # load each gene set one by one
-      gsc.forEnrich <- loadGSC(gsets[[gs]])
-      
-      res.fgsea <- runGSA(geneLevelStats = rank_vector,
-                          geneSetStat = "fgsea",
-                          gsc = gsc.forEnrich,
-                          nPerm = 1000,
-                          adjMethod = "BH")
-      
-      
-      fgseaResTab <- GSAsummaryTable(res.fgsea)[,c(1,2,5,8)]
-      colnames(fgseaResTab)=c("Gset.Term.Enriched","Gene.Set.Size",
-                              "pAdj_disdir_up","pAdj_disdir_down")
-      
-      fgseaResTab$Gset.Type <- gsetnames[gs]
-      
-      if(nrow(fgseaResTab)==0){
-        dfE=cbind("No Significant Results",NA,NA,NA,gsetnames[gs])
-        colnames(dfE)=c("Gset.Term.Enriched","Gene.Set.Size",
-                        "pAdj_disdir_up","pAdj_disdir_down",
-                        "Gset.Type")
-      }
-      
-      return(fgseaResTab)
-    }
-    gset_2func=gsets[[gs]]
-    
-    data.frame(get_fgsea_enrichments(gset_2func,df_forfgsea))
-  }
-  return(All_gsets_fgseares)
 }
 
 ########################################
 ### Helper functions for Sankey plot ###
 ########################################
 
-pval2colour_OE <- function(x){
-  
-  col = colorRamp2(c(0.001,0.05), c("darkred","#FFC1C1"),
-                   transparency = 0.7)
-  
-  return(col(x))
-  
+hex2colWopacity <- function(hx) {
+  if (hx == "gray") {
+    x = rbind(red = 0, green = 0 , blue = 0 )
+    x = rgb(x[1], x[2], x[3], max = 255, alpha = 1)
+    return(x)
+  } else {
+    c <- col2rgb(hx)
+    c <- rgb(c[1], c[2], c[3], max = 255, alpha = 150)
+    return(c)
+  }
 }
-
-pval2colour_UE <- function(x){
-  
-  col = colorRamp2(c(0.001,0.05), c("darkblue","#B0E2FF"),
-                   transparency = 0.7)
-  
-  return(col(x))
-}
-
-hex2colWopacity <- function(hx){
-  
-  c <- col2rgb(hx)
-  c <- rgb(c[1],c[2],c[3],max=255,alpha=125)
-  
-  return(c)
-}
-
 
 ###########################################################################################
 ### Sankey Plot for results of hyperGSA element wise ### 2 columns only ## no direction ###
 ###########################################################################################
 
-make_twocolumn_Sankey_plot <- function(df, gset_type) {
+plot_twocolumn_Sankey <- function(df, gset_type) {
   # Filter data frame based on Gset.Type
   df_type <- df %>% filter(Gset.Type == gset_type)
   
@@ -240,7 +112,7 @@ make_twocolumn_Sankey_plot <- function(df, gset_type) {
   links <- data.frame(source = df_type$Element_id - 1, # -1 because of zero-based index
                       target = df_type$Gset_id - 1, 
                       value = df_type$Gene.Set.Size,
-                      color = sapply(df_type$Element, function(x) paste0(colkey_Ele[[x]], "80"))) # assign color from colkey_Ele with 0.5 opacity
+                      color = sapply(df_type$Element, function(x) paste0(colkey_Ele[[x]], "80"))) # assign color from colkey_Ele with 0.8 opacity
   
   # Color for nodes
   node_colors <- c(sapply(unique(df_type$Element), function(x) colkey_Ele[[x]]), rep("rgba(0,0,0,0)", length(unique(df_type$Gset.Term.Enriched)))) # assign color from colkey_Ele for Elements and transparent for Gset.Term.Enriched
@@ -272,141 +144,50 @@ make_twocolumn_Sankey_plot <- function(df, gset_type) {
     layout(
       title =  paste("Sankey Diagram for", gset_type),
       font =  list(
-        size = 10
+        size = 15,
+        family="Times"
       )
     )
   
   return(p)
 }
 
+##########################################################################
+### 3 column Sankey plot for extrac vs prot and intrac vs protein hits ###
+##########################################################################
 
-##################################################################
-### Sankey Plot for element perturbation up and down regulated ###
-##################################################################
-
-plot_Sankey_DE <- function(df,
-                           GeneSetType,
-                           minGsetSize,
-                           maxGsetSize){
+plot_threecolumn_Sankey <- function(df,
+                                    GeneSetType){
   
+  ## create dataframe that links terms enriched along extracellular metal conc vs protein to each metal
   
-  ## Make source to target df for Gset terms enriched in under expressed 
+  extra_hits_sankey <- filter(df, type_of_lmresults == "extracellular" & Gset.Type == GeneSetType)%>%
+                       mutate(source = paste(Gset.Term.Enriched,"_ext_"),
+                              target = paste(Element,"_metal_"),
+                              value = 1,
+                              link_colour = sapply(Element, function(x) paste0(colkey_Ele[[x]], "80")))
   
-  UE_for_Sankey <- df %>%
-    filter(Gset.Type==GeneSetType &
-             pAdj_disdir_down < 0.05)%>%
-    mutate(source=paste(Gset.Term.Enriched,"UE"),
-           target=paste(Element,Perturbation,"pert"),
-           value=1,
-           pvAdjEnch = pAdj_disdir_down)%>%
-    dplyr::select(source,target,value,pvAdjEnch)%>%
-    unique()%>%
-    # Add colours according to pvAdj of enrichment
-    # mutate(link_colour = as.character(lapply(pvAdjEnch,pval2colour_UE)))
-    # Add colour according to perturbation 
-    mutate(link_colour = ifelse(target =="Ca Depletion pert",
-                                grDevices::colorRampPalette(c("#BCD2EE","#1F78B4"))(9)[[1]],
-                                ifelse(target =="Ca Excess pert",
-                                       grDevices::colorRampPalette(c("#BCD2EE","#1F78B4"))(9)[[9]],
-                                       ifelse(target =="Cu Depletion pert",
-                                              grDevices::colorRampPalette(c("#90EE90","#228B22"))(13)[[1]],
-                                              ifelse(target =="Cu Excess pert",
-                                                     grDevices::colorRampPalette(c("#90EE90","#228B22"))(13)[[12]],
-                                                     ifelse(target =="Fe Depletion pert",
-                                                            grDevices::colorRampPalette(c("#F08080","#B0171F"))(13)[[1]],
-                                                            ifelse(target =="Fe Excess pert",
-                                                                   grDevices::colorRampPalette(c("#F08080","#B0171F"))(13)[[12]],
-                                                                   ifelse(target =="K Depletion pert",
-                                                                          grDevices::colorRampPalette(c("#CDC9C9","#5B5B5B"))(6)[[1]],
-                                                                          ifelse(target =="K Excess pert",
-                                                                                 grDevices::colorRampPalette(c("#CDC9C9","#5B5B5B"))(6)[[6]],
-                                                                                 ifelse(target =="Mg Depletion pert",
-                                                                                        grDevices::colorRampPalette(c("#E3A869","#8B4513"))(9)[[1]],
-                                                                                        ifelse(target =="Mg Excess pert",
-                                                                                               grDevices::colorRampPalette(c("#E3A869","#8B4513"))(9)[[8]],
-                                                                                               ifelse(target =="Mn Depletion pert",
-                                                                                                      grDevices::colorRampPalette(c("#FFE1FF","#6A3D9A"))(13)[[1]],
-                                                                                                      ifelse(target =="Mn Excess pert",
-                                                                                                             grDevices::colorRampPalette(c("#FFE1FF","#6A3D9A"))(13)[[13]],  
-                                                                                                             ifelse(target =="Mo Depletion pert",
-                                                                                                                    grDevices::colorRampPalette(c("#40E0D0","#008080"))(13)[[1]],
-                                                                                                                    ifelse(target =="Mo Excess pert",
-                                                                                                                           grDevices::colorRampPalette(c("#40E0D0","#008080"))(13)[[12]], 
-                                                                                                                           ifelse(target =="Na Depletion pert",
-                                                                                                                                  grDevices::colorRampPalette(c("#FFEC8B","#EE9A00"))(13)[[1]],
-                                                                                                                                  ifelse(target =="Na Excess pert",
-                                                                                                                                         grDevices::colorRampPalette(c("#FFEC8B","#EE9A00"))(13)[[13]], 
-                                                                                                                                         ifelse(target =="Zn Depletion pert",
-                                                                                                                                                grDevices::colorRampPalette(c("#CAE1FF","#000080"))(14)[[3]],
-                                                                                                                                                ifelse(target =="Zn Excess pert",
-                                                                                                                                                       grDevices::colorRampPalette(c("#CAE1FF","#000080"))(14)[[14]],
-                                                                                                                                                       "gray"))))))))))))))))))
-    )%>%
-    mutate(link_colour =as.character(lapply(link_colour, hex2colWopacity)))
-  ## Overexpressed Sankey Nodes
+  ## create dataframe that links terms enriched along intracellular metal conc vs protein to each metal
   
-  OE_for_Sankey <- df %>%
-    filter(Gset.Type==GeneSetType &
-             pAdj_disdir_up < 0.05  )%>%
-    mutate(source=paste(Element,Perturbation,"pert"),
-           target=paste(Gset.Term.Enriched,"OE"),
-           value=1,
-           pvAdjEnch = pAdj_disdir_up)%>%
-    dplyr::select(source,target,value,pvAdjEnch)%>%
-    unique()%>%
-    # Add colours according to pvAdj of enrichment
-    # mutate(link_colour = as.character(lapply(pvAdjEnch,pval2colour_OE)))
-    # Add colour according to perturbation 
-    mutate(link_colour = ifelse(source =="Ca Depletion pert",
-                                grDevices::colorRampPalette(c("#BCD2EE","#1F78B4"))(9)[[1]],
-                                ifelse(source =="Ca Excess pert",
-                                       grDevices::colorRampPalette(c("#BCD2EE","#4F78B4"))(9)[[9]],
-                                       ifelse(source =="Cu Depletion pert",
-                                              grDevices::colorRampPalette(c("#90EE90","#228B22"))(13)[[1]],
-                                              ifelse(source =="Cu Excess pert",
-                                                     grDevices::colorRampPalette(c("#90EE90","#228B22"))(13)[[12]],
-                                                     ifelse(source =="Fe Depletion pert",
-                                                            grDevices::colorRampPalette(c("#F08080","#B0171F"))(13)[[1]],
-                                                            ifelse(source =="Fe Excess pert",
-                                                                   grDevices::colorRampPalette(c("#F08080","#B0171F"))(13)[[12]],
-                                                                   ifelse(source =="K Depletion pert",
-                                                                          grDevices::colorRampPalette(c("#CDC9C9","#5B5B5B"))(6)[[1]],
-                                                                          ifelse(source =="K Excess pert",
-                                                                                 grDevices::colorRampPalette(c("#CDC9C9","#5B5B5B"))(6)[[6]],
-                                                                                 ifelse(source =="Mg Depletion pert",
-                                                                                        grDevices::colorRampPalette(c("#E3A869","#8B4513"))(9)[[1]],
-                                                                                        ifelse(source =="Mg Excess pert",
-                                                                                               grDevices::colorRampPalette(c("#E3A869","#8B4513"))(9)[[8]],
-                                                                                               ifelse(source =="Mn Depletion pert",
-                                                                                                      grDevices::colorRampPalette(c("#FFE1FF","#6A3D9A"))(13)[[1]],
-                                                                                                      ifelse(source =="Mn Excess pert",
-                                                                                                             grDevices::colorRampPalette(c("#FFE1FF","#6A3D9A"))(13)[[13]],  
-                                                                                                             ifelse(source =="Mo Depletion pert",
-                                                                                                                    grDevices::colorRampPalette(c("#40E0D0","#008080"))(13)[[1]],
-                                                                                                                    ifelse(source =="Mo Excess pert",
-                                                                                                                           grDevices::colorRampPalette(c("#40E0D0","#008080"))(13)[[12]], 
-                                                                                                                           ifelse(source =="Na Depletion pert",
-                                                                                                                                  grDevices::colorRampPalette(c("#FFEC8B","#EE9A00"))(13)[[1]],
-                                                                                                                                  ifelse(source =="Na Excess pert",
-                                                                                                                                         grDevices::colorRampPalette(c("#FFEC8B","#EE9A00"))(13)[[13]], 
-                                                                                                                                         ifelse(source =="Zn Depletion pert",
-                                                                                                                                                grDevices::colorRampPalette(c("#CAE1FF","#000080"))(14)[[3]],
-                                                                                                                                                ifelse(source =="Zn Excess pert",
-                                                                                                                                                       grDevices::colorRampPalette(c("#CAE1FF","#000080"))(14)[[14]],
-                                                                                                                                                       "gray"))))))))))))))))))
-    )%>%
-    mutate(link_colour =as.character(lapply(link_colour, hex2colWopacity)))
-  ## Combined 
+  intra_hits_sankey <- filter(df, type_of_lmresults == "intracellular" & Gset.Type == GeneSetType)%>%
+                      mutate(target = paste(Gset.Term.Enriched,"_int_"),
+                             source = paste(Element,"_metal_"),
+                             value = 1,
+                             link_colour = sapply(Element, function(x) paste0(colkey_Ele[[x]], "80")))
+                    
+  # combine the two dataframe to generate nodes and links later 
+  extr_intr_hits_df_for_sankey <- rbind(extra_hits_sankey,intra_hits_sankey)
   
-  DE_for_Sankey <- rbind(UE_for_Sankey,OE_for_Sankey)
+  ## generate all nodes
+  buffer <- 0.001 # adjust this value to get the desired spacing between y-coordinates
   
-  DE_for_Sankey_nodes <- data.frame(name=c(as.character(DE_for_Sankey$source), 
-                                           as.character(DE_for_Sankey$target)) %>% 
-                                      unique())%>%
+  sankey_nodes <- data.frame(name = c(as.character(extr_intr_hits_df_for_sankey$source), 
+                                      as.character(extr_intr_hits_df_for_sankey$target)) %>% 
+                               unique())%>%
     # Add node positions 
-    # x coord
-    mutate(x_coord = ifelse(grepl("pert",name),0.5,
-                            ifelse(grepl("UE",name),0.1,0.9)))%>%
+    # x coord - if its extracellular put it on the left
+    mutate(x_coord = ifelse(grepl("_metal_",name),0.5,
+                            ifelse(grepl("_ext_",name),0.1,0.9)))%>%
     mutate(n=1)%>%
     # y coord
     group_by(x_coord)%>%
@@ -414,68 +195,39 @@ plot_Sankey_DE <- function(df,
            counter = cumsum(n)
     )%>%
     ungroup()%>%
-    mutate(y_cood= counter/y_cood)%>%
+    mutate(y_cood = (counter + buffer) / (y_cood + 2 * buffer) )%>% # add buffer to both the counter and y_cood to maintain the relative positioning
     dplyr::select(-n,-counter)
   
-  DE_for_Sankey$IDsource=match(DE_for_Sankey$source, DE_for_Sankey_nodes$name)-1 
-  DE_for_Sankey$IDtarget=match(DE_for_Sankey$target, DE_for_Sankey_nodes$name)-1
   
-  pert_cat <- ifelse(grepl("UE",DE_for_Sankey_nodes$name),"darkblue",
-                     ifelse(grepl("OE",DE_for_Sankey_nodes$name),"darkred",
-                            ifelse(grepl("pert",DE_for_Sankey_nodes$name),
-                                   ifelse(DE_for_Sankey_nodes$name =="Ca Depletion pert",
-                                          grDevices::colorRampPalette(c("#BCD2EE","#1F78B4"))(9)[[1]],
-                                          ifelse(DE_for_Sankey_nodes$name =="Ca Excess pert",
-                                                 grDevices::colorRampPalette(c("#BCD2EE","#1F78B4"))(9)[[9]],
-                                                 ifelse(DE_for_Sankey_nodes$name =="Cu Depletion pert",
-                                                        grDevices::colorRampPalette(c("#90EE90","#228B22"))(13)[[1]],
-                                                        ifelse(DE_for_Sankey_nodes$name =="Cu Excess pert",
-                                                               grDevices::colorRampPalette(c("#90EE90","#228B22"))(13)[[12]],
-                                                               ifelse(DE_for_Sankey_nodes$name =="Fe Depletion pert",
-                                                                      grDevices::colorRampPalette(c("#F08080","#B0171F"))(13)[[1]],
-                                                                      ifelse(DE_for_Sankey_nodes$name =="Fe Excess pert",
-                                                                             grDevices::colorRampPalette(c("#F08080","#B0171F"))(13)[[12]],
-                                                                             ifelse(DE_for_Sankey_nodes$name =="K Depletion pert",
-                                                                                    grDevices::colorRampPalette(c("#CDC9C9","#5B5B5B"))(6)[[1]],
-                                                                                    ifelse(DE_for_Sankey_nodes$name =="K Excess pert",
-                                                                                           grDevices::colorRampPalette(c("#CDC9C9","#5B5B5B"))(6)[[6]],
-                                                                                           ifelse(DE_for_Sankey_nodes$name =="Mg Depletion pert",
-                                                                                                  grDevices::colorRampPalette(c("#E3A869","#8B4513"))(9)[[1]],
-                                                                                                  ifelse(DE_for_Sankey_nodes$name =="Mg Excess pert",
-                                                                                                         grDevices::colorRampPalette(c("#E3A869","#8B4513"))(9)[[8]],
-                                                                                                         ifelse(DE_for_Sankey_nodes$name =="Mn Depletion pert",
-                                                                                                                grDevices::colorRampPalette(c("#FFE1FF","#6A3D9A"))(13)[[1]],
-                                                                                                                ifelse(DE_for_Sankey_nodes$name =="Mn Excess pert",
-                                                                                                                       grDevices::colorRampPalette(c("#FFE1FF","#6A3D9A"))(13)[[13]],  
-                                                                                                                       ifelse(DE_for_Sankey_nodes$name =="Mo Depletion pert",
-                                                                                                                              grDevices::colorRampPalette(c("#40E0D0","#008080"))(13)[[1]],
-                                                                                                                              ifelse(DE_for_Sankey_nodes$name =="Mo Excess pert",
-                                                                                                                                     grDevices::colorRampPalette(c("#40E0D0","#008080"))(13)[[12]], 
-                                                                                                                                     ifelse(DE_for_Sankey_nodes$name =="Na Depletion pert",
-                                                                                                                                            grDevices::colorRampPalette(c("#FFEC8B","#EE9A00"))(13)[[1]],
-                                                                                                                                            ifelse(DE_for_Sankey_nodes$name =="Na Excess pert",
-                                                                                                                                                   grDevices::colorRampPalette(c("#FFEC8B","#EE9A00"))(13)[[13]], 
-                                                                                                                                                   ifelse(DE_for_Sankey_nodes$name =="Zn Depletion pert",
-                                                                                                                                                          grDevices::colorRampPalette(c("#CAE1FF","#000080"))(14)[[3]],
-                                                                                                                                                          ifelse(DE_for_Sankey_nodes$name =="Zn Excess pert",
-                                                                                                                                                                 grDevices::colorRampPalette(c("#CAE1FF","#000080"))(14)[[14]],
-                                                                                                                                                                 "gray")))))))))))))))))),"gray"))) 
-  pert_cat <- as.character(lapply(pert_cat,hex2colWopacity))
+  extr_intr_hits_df_for_sankey$IDsource = match(extr_intr_hits_df_for_sankey$source, sankey_nodes$name)-1 
+  extr_intr_hits_df_for_sankey$IDtarget = match(extr_intr_hits_df_for_sankey$target, sankey_nodes$name)-1
   
-  DE_for_Sankey_nodes<- DE_for_Sankey_nodes%>%
-    mutate(name = gsub("pert","",name),
-           name = gsub("UE","",name),
-           name = gsub("OE","",name))
+  node_color_vector <- ifelse(sankey_nodes$name == "Ca _metal_",colkey_Ele[["Ca"]],
+                              ifelse(sankey_nodes$name == "Cu _metal_",colkey_Ele[["Cu"]],
+                                     ifelse(sankey_nodes$name == "Fe _metal_",colkey_Ele[["Fe"]],
+                                            ifelse(sankey_nodes$name == "K _metal_",colkey_Ele[["K"]],
+                                                   ifelse(sankey_nodes$name == "Mg _metal_",colkey_Ele[["Mg"]],
+                                                          ifelse(sankey_nodes$name == "Mn _metal_",colkey_Ele[["Mn"]],
+                                                                 ifelse(sankey_nodes$name == "Mo _metal_",colkey_Ele[["Mo"]],
+                                                                        ifelse(sankey_nodes$name == "Na _metal_",colkey_Ele[["Na"]],
+                                                                               ifelse(sankey_nodes$name == "Zn _metal_",colkey_Ele[["Zn"]],
+                                                                                      "gray")))))))))
   
+  node_color_vector <- as.character(lapply(node_color_vector,hex2colWopacity))
+  
+  sankey_nodes <- sankey_nodes%>%
+                  mutate(name = gsub(" _metal_","",name),
+                         name = gsub(" _ext_","",name),
+                         name = gsub(" _int_","",name))
   
   
   fig <- plotly::plot_ly(
     type = "sankey",
     node = list(
-      label = DE_for_Sankey_nodes$name,
-      x=DE_for_Sankey_nodes$x_coord,
-      y=DE_for_Sankey_nodes$y_cood,
-      color = pert_cat,
+      label = sankey_nodes$name,
+      x = sankey_nodes$x_coord,
+      y = sankey_nodes$y_cood,
+      color = node_color_vector,
       pad = 20,
       thickness = 20,
       line = list(
@@ -483,21 +235,150 @@ plot_Sankey_DE <- function(df,
         width = 0.5
       )
     ),
-    
     link = list(
-      source = DE_for_Sankey$IDsource,
-      target = DE_for_Sankey$IDtarget,
-      value =  DE_for_Sankey$value,
-      color = DE_for_Sankey$link_colour
-    )
+      source = extr_intr_hits_df_for_sankey$IDsource,
+      target = extr_intr_hits_df_for_sankey$IDtarget,
+      value =  extr_intr_hits_df_for_sankey$value,
+      color = extr_intr_hits_df_for_sankey$link_colour
+    ),
   )
+  
+  
+  
   fig <- fig %>% layout(
     title = paste(GeneSetType),
     font = list(
       size = 15,
-      family="Arial"
+      family = "Times"
     )
   )
+  
+  fig
+  
   return(fig)
+  
 }
 
+###########################################################################################################
+### 3 column Sankey plot for dataset to metal DA in dataset to gset term enriched in dataset-metal pair ###
+###########################################################################################################
+
+plot_threecolumn_dataset2metal2genesetterm_Sankey <- function(df,GeneSetType){
+  
+  ## create dataframe that links datasets to metals
+  
+  datasets_to_metals_sankey_df <- filter(df, Gset.Type == GeneSetType)%>%
+                                  group_by(dataset,metal)%>%
+                                  mutate(num_gsterms_enriched = length(Gset.Term.Enriched))%>%
+                                  ungroup()%>%
+                                  dplyr::select(dataset,metal,num_gsterms_enriched)%>%
+                                  unique()%>%
+                                  mutate(source = paste0(dataset,"_dataset_"),
+                                          target = paste(dataset,metal,"dsmet_",sep="_"),
+                                          value = num_gsterms_enriched,
+                                          link_colour = sapply(metal, function(x) paste0(colkey_Ele[[x]], "80")))%>%
+                                  dplyr::select(-dataset,-metal,-num_gsterms_enriched)
+                                  
+  ## create dataframe that links metal-dataset values to gset terms enriched
+  
+  metals_to_enrichedterms_sankey_df <- filter(df, Gset.Type == GeneSetType)%>%
+                                       dplyr::select(dataset,metal,Gset.Term.Enriched)%>%
+                                       unique()%>%
+                                       mutate(source = paste(dataset,metal,"dsmet_",sep="_"),
+                                               target = Gset.Term.Enriched,
+                                               value = 1,
+                                               link_colour = sapply(metal, function(x) paste0(colkey_Ele[[x]], "80")))%>%
+                                       dplyr::select(-dataset, -metal, -Gset.Term.Enriched)
+  
+  # combine the two dataframe to generate nodes and links later 
+  datasets2metals2gseterms_for_sankey <- rbind(datasets_to_metals_sankey_df,metals_to_enrichedterms_sankey_df)
+  
+  ## generate all nodes
+  buffer <- 0.001 # adjust this value to get the desired spacing between y-coordinates
+  
+  sankey_nodes <- data.frame(name = c(as.character(datasets2metals2gseterms_for_sankey$source), 
+                                      as.character(datasets2metals2gseterms_for_sankey$target)) %>% 
+                  unique())%>%
+    # Add node positions 
+    # x coord - if its extracellular put it on the left
+    mutate(x_coord = ifelse(grepl("_dsmet_",name),0.5,
+                            ifelse(grepl("_dataset_",name),0.1,0.9)))%>%
+    mutate(n=1)%>%
+    # y coord
+    group_by(x_coord)%>%
+    mutate(y_cood = length(x_coord),
+           counter = cumsum(n)
+    )%>%
+    ungroup()%>%
+    mutate(y_cood = (counter + buffer) / (y_cood + 2 * buffer) )%>% # add buffer to both the counter and y_cood to maintain the relative positioning
+    dplyr::select(-n,-counter)
+  
+  
+  datasets2metals2gseterms_for_sankey$IDsource = match(datasets2metals2gseterms_for_sankey$source, sankey_nodes$name)-1 
+  datasets2metals2gseterms_for_sankey$IDtarget = match(datasets2metals2gseterms_for_sankey$target, sankey_nodes$name)-1
+  
+  convert_nodenames_to_hexcolour <- function(x){
+    
+    colour = ifelse(grepl("Ca_dsmet_",x),colkey_Ele[["Ca"]],
+                    ifelse(grepl("Cu_dsmet_",x),colkey_Ele[["Cu"]],
+                           ifelse(grepl("Fe_dsmet_",x),colkey_Ele[["Fe"]],
+                                  ifelse(grepl("K_dsmet_",x),colkey_Ele[["K"]],
+                                         ifelse(grepl("Mg_dsmet_",x),colkey_Ele[["Mg"]],
+                                                ifelse(grepl("Mn_dsmet_",x),colkey_Ele[["Mn"]],
+                                                       ifelse(grepl("Mo_dsmet_",x),colkey_Ele[["Mo"]],
+                                                              ifelse(grepl("Na_dsmet_",x),colkey_Ele[["Na"]],
+                                                                     ifelse(grepl("Zn_dsmet_",x),colkey_Ele[["Zn"]],
+                                                                            "gray")))))))))
+    return(colour)
+  }
+  node_color_vector <- as.character(lapply(sankey_nodes$name,convert_nodenames_to_hexcolour))
+  
+  node_color_vector <- as.character(lapply(node_color_vector,hex2colWopacity))
+  
+  sankey_nodes <- sankey_nodes%>%
+                  mutate(name = gsub("_dataset_","",name),
+                         name = gsub("_dsmet_","",name),
+                         name = gsub("metdepKOgrowth_","",name),
+                         name = gsub("KOmetallomics_","",name),
+                         name = gsub("OEmetallomics_","",name),
+                         name = gsub("y5kmetalspecific_","",name),
+                         name = gsub("metpertWTproteomics_","",name),
+                         )
+  
+  
+  fig <- plotly::plot_ly(
+    type = "sankey",
+    node = list(
+      label = sankey_nodes$name,
+      x = sankey_nodes$x_coord,
+      y = sankey_nodes$y_cood,
+      color = node_color_vector,
+      pad = 20,
+      thickness = 20,
+      line = list(
+        color = "black",
+        width = 0.5
+      )
+    ),
+    link = list(
+      source = datasets2metals2gseterms_for_sankey$IDsource,
+      target = datasets2metals2gseterms_for_sankey$IDtarget,
+      value =  datasets2metals2gseterms_for_sankey$value,
+      color = datasets2metals2gseterms_for_sankey$link_colour
+    ),
+  )
+  
+  
+  
+  fig <- fig %>% layout(
+    title = paste(GeneSetType),
+    font = list(
+      size = 15,
+      family = "Times"
+    )
+  )
+  
+  fig
+  
+  return(fig)
+}

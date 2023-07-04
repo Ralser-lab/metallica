@@ -45,51 +45,7 @@ clus_annostat <- full_EC %>%
   summarize(Num_ORFs = length(ORF))%>%
   ungroup()
 
-pubmedanno_AllLit <- read.csv(paste0(projdir,"/Databases/Number of pubmed publications per ORF All Literature.csv"),
-                              stringsAsFactors = F)%>%
-  filter(!grepl("ARS",ORF))
-colnames(pubmedanno_AllLit)[3] <- "Num_Public_AllLit"
 
-pubmedanno_PrimaryLit <- read.csv(paste0(projdir,"/Databases/Number of pubmed publications per ORF Primary Literature.csv"),
-                                  stringsAsFactors = F)%>%
-  filter(!grepl("ARS",ORF))
-colnames(pubmedanno_PrimaryLit)[3] <- "Num_Public_PrimaryLit"
-
-quantiles_AL <- quantile(pubmedanno_AllLit$Num_Public_AllLit)
-
-clus_ALanno <- merge(full_EC, pubmedanno_AllLit,by="ORF")%>%
-  mutate(Quantile = ifelse( Num_Public_AllLit < quantiles_AL[[2]], paste("<",quantiles_AL[[2]]),
-                            ifelse(Num_Public_AllLit < quantiles_AL[[3]] , paste(quantiles_AL[[2]],"-",quantiles_AL[[3]]),
-                                   ifelse(Num_Public_AllLit < quantiles_AL[[4]],paste(quantiles_AL[[3]] ,"-",quantiles_AL[[4]]),
-                                          paste(quantiles_AL[[4]],"-",quantiles_AL[[5]]))))
-  )
-write.csv(clus_ALanno,"ORF ensemble clustering lit anno.csv")
-
-clus_ALanno <- clus_ALanno%>%
-  group_by(Cluster, Quantile)%>%
-  mutate(Num_ORFs = length(ORF))%>%
-  ungroup()
-
-clus_ALanno$Quantile = factor(clus_ALanno$Quantile,
-                              levels = c("< 8","8 - 26","26 - 65","65 - 1212"))
-
-
-quantiles_PL <- quantile(pubmedanno_PrimaryLit$Num_Public_PrimaryLit)
-
-clus_PLanno <- merge(full_EC, pubmedanno_PrimaryLit,by="ORF")%>%
-  mutate(Quantile = ifelse( Num_Public_PrimaryLit < quantiles_PL[[2]], paste("<",quantiles_PL[[2]]),
-                            ifelse(Num_Public_PrimaryLit < quantiles_PL[[3]] , paste(quantiles_PL[[2]],"-",quantiles_PL[[3]]),
-                                   ifelse(Num_Public_PrimaryLit < quantiles_PL[[4]],paste(quantiles_PL[[3]] ,"-",quantiles_PL[[4]]),
-                                          paste(quantiles_PL[[4]],"-",quantiles_PL[[5]]))))
-  )%>%
-  group_by(Cluster, Quantile)%>%
-  mutate(Num_ORFs = length(ORF))%>%
-  ungroup()
-
-clus_PLanno$Quantile = factor(clus_PLanno$Quantile,
-                              levels = c("< 3","3 - 8","8 - 20","20 - 435"))
-
-write.csv(clus_PLanno,"ORF ensemble clustering primarylit anno.csv")
 
 pdf(paste0(ensclust_dir,"/Poorly characterised proteins in clusters.pdf"),width=10,height=5)
 ggplot(clus_annostat,

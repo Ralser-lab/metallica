@@ -318,7 +318,7 @@ Sample_data_n <- merge(Sample_data_n,ConvFac,by.x="plate",by.y="Layout")%>%
                  filter(SpecOD > 0.1)%>%
                  mutate(ng_perwell = (value * Final_Vol_for_ICPMS))%>%
                  mutate(pg_percell = (ng_perwell*1000)/
-                                     (SpecOD*1.5 * 10000000 *Volume_perwell_of_culture_transferred_to_filterplate))
+                                     (SpecOD*1.8 * 10000000 *Volume_perwell_of_culture_transferred_to_filterplate))
 
 #####################################
 ### Are there any batch effects ? ###
@@ -716,6 +716,39 @@ pearson_matrix <- create_correlation_matrix(metmet_correlations, "pearson")
 p_value_pearson_matrix <- create_correlation_matrix(metmet_correlations, "p_value_pearson")
 spearman_matrix <- create_correlation_matrix(metmet_correlations, "spearman")
 p_value_spearman_matrix <- create_correlation_matrix(metmet_correlations, "p_value_spearman")
+
+
+## transform to long to save
+spearman_matrix_long <- spearman_matrix%>%
+                        reshape2::melt()
+colnames(spearman_matrix_long) <- c("metal_perturbed","metal_measured","spearman_correlation")
+
+
+p_value_spearman_matrix_long <- p_value_spearman_matrix%>%
+                                reshape2::melt()
+
+colnames(p_value_spearman_matrix_long) <- c("metal_perturbed","metal_measured","spearman_correlation_pvalue")
+
+spearman_matrix_long<- merge(spearman_matrix_long,p_value_spearman_matrix_long, by = c("metal_perturbed","metal_measured"))%>%
+                       mutate(abs_spearman_correlation = abs(spearman_correlation),
+                              sig_high_correlation = ifelse(abs_spearman_correlation > 0.8 &
+                                                          spearman_correlation_pvalue < 0.05,T,F ))
+
+write.csv(spearman_matrix_long, paste0("metpert_metmeas_spearmancorrelations.csv"),row.names = T)
+
+metmet_correlations_summary <-  spearman_matrix_long%>%
+                                filter(as.character(metal_perturbed)!= as.character(metal_measured))%>%
+                                group_by(metal_perturbed)%>%
+                                summarize(num_sig_corr = sum(sig_high_correlation,na.rm=T))
+write.csv(metmet_correlations_summary, paste0("metpert_metmeas_correlations_summary.csv"),row.names = T)
+
+high_correlation_df <- subset(spearman_matrix_long, 
+                              abs_spearman_correlation > 0.8 & 
+                                spearman_correlation_pvalue < 0.05)%>%
+  filter(as.character(metal_perturbed)!= as.character(metal_measured))
+  
+
+
 
 # Get the RdBu palette and reverse it
 col <- rev(corrplot::COL2("RdBu", n = 200))
