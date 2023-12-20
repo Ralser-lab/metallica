@@ -3,7 +3,7 @@
 #################################################
 
 # main directory containing all code and data for the metallica project
-proj_dir <- "/Users/aulakhs/Documents/Ralser Lab/metallica"
+proj_dir <- "/Users/aulakhs/Documents/RalserLab/metallica"
 # directory for common functions and graphic params
 code_dir <- paste0(proj_dir,"/code")
 # directory for all publically available databases used
@@ -20,6 +20,7 @@ metpert_WTgrowth_dir <- paste0(proj_dir,"/experiment_data/metpert_WTgrowth")
 metpert_WTmetallomics_dir <- paste0(proj_dir,"/experiment_data/metpert_WTmetallomics")
 metpert_WTproteomics_dir <- paste0(proj_dir,"/experiment_data/metpert_WTproteomics")
 metpert_ecYeast8simulation_dir <- paste0(proj_dir,"/experiment_data/metpert_ecYeast8simulation")
+metpert_sim_vs_exp_comparison_dir <- paste0(proj_dir,"/experiment_data/simulation_vs_experiment_comparison")
 
 datasetcomparison_dir <- paste0(proj_dir,"/dataset_comparison")
 #

@@ -13,12 +13,13 @@
 #### Script to make fit linar models along concentration gradient for each protein-element combination
 
 
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 
 # general
 
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
+source(paste0(code_dir,"/common_code/database_identifier_conversion_functions.R"))
 source(paste0(code_dir,"/common_code/input_processed_databases_publisheddatasets.R"))
 
 
@@ -68,7 +69,7 @@ run_elewise_hyperGSA <- function(hits_df,type_of_lmresults){
     df2HyperGSA <- filter(hits_df, Element == eles[e])%>%
       dplyr::select(ORF,Significant)
     
-    hres <- get_plot_HyperGSA(df2HyperGSA,
+    hres <- run_HyperGSA(df2HyperGSA,
                               EnrichPV_thresh=0.05)
     
     if(length(hres)>0){

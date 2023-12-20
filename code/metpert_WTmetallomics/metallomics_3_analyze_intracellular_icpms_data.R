@@ -10,7 +10,7 @@
 #############################################
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
 
@@ -69,9 +69,17 @@ Sample_df_sb <- sweep(as.matrix(Sample_df_sb), 2, Blank_medians, FUN="-")
 
 Sample_df[,c(3:13)] <- Sample_df_sb
 
-##########################################################
-### Normalize all CPS to dilution volume to get CPS/mL ###
-##########################################################
+###################################################################################
+### Normalize all CPS to dilution volume to get CPS/mL of digested cell culture ###
+###################################################################################
+
+## Explanation
+# When we digested the cell pellet with HNO3, different amounts of liquid were left in different plates. the final concencentration
+# was adjusted to be 10% HNO3 . These differet amounts of final total volume are 1.054, 0.844 etc.
+# these were then injected into the ICP-MS which gives PPB in the liquid that was injected into it
+# however -- the cell digest shouldve ideally been equally diluted
+# to compensate -- we are now normalising everything eg. the cell pellet that ended up in 1.054 is being divided by 1.054 to get the true per mL values in the cell digest
+
 
 for(i in 1:nrow(Sample_df)){
   
@@ -186,7 +194,6 @@ pdf(paste0(plot_dir,"/blanks_qc_loq.pdf"),width=12,height=8)
           facet_wrap("element_measured",scales = "free") +
           scale_colour_manual(values=c("#A4D3EE","#4F94CD","#8B4789"))+
           theme_metallica()+
-          theme( text = element_text(family = "Tinos"))+
           theme(strip.background =element_rect(fill="white"))+
           theme(strip.text  =element_text(size=13,colour="darkblue"))+
           labs(x="batch",y="mean(log2(counts per second))")
@@ -229,22 +236,30 @@ BlPrBlQC_df_LOQ <- merge(BlPrBlQC_df,LOQ_df,by=c("LO","element_measured"))%>%
 
 
 AllData_LOQ_filt <- rbind(Sample_df_LOQfilt[,c("LO","element_measured","SampleName","Type","CPS","LOQ")],
-                          BlPrBlQC_df_LOQ[,c("LO","element_measured","SampleName","Type","CPS","LOQ")])
+                          BlPrBlQC_df_LOQ[,c("LO","element_measured","SampleName","Type","CPS","LOQ")])%>%
+                    mutate(element_measured = factor(element_measured,
+                                                     levels = c("Ca","Cu","Fe","K","Mg","Mn","Mo",
+                                                                "Na","P","S","Zn")))
 
+LOQ_data_forplot <- AllData_LOQ_filt[,c("LO","element_measured","LOQ")]%>%
+                    unique()
+                    
 ###############################################
 ### Plot all Sample Values after LOQ filter ###
 ###############################################
 
-pdf(paste0(plot_dir,"/all_metallomics_samples_after_loq_filter.pdf"),width=12,height=8)
+pdf(paste0(plot_dir,"/all_metallomics_samples_after_loq_filter.pdf"),width=20,height=6)
 
 ggplot(AllData_LOQ_filt,
        aes(x=LO,
            y=log2(CPS),
            colour=Type))+
-        geom_point(alpha=0.6,size=3)+
-        facet_wrap("element_measured",scales="free")+
-        geom_point(shape="-",colour="red",size=10,
-                   aes(y=log2(LOQ)))+
+        geom_point(alpha=0.6,size=2)+
+        facet_wrap("element_measured",scales="free", nrow = 2)+
+        geom_point(data = LOQ_data_forplot,
+                   aes(y=log2(LOQ)),
+                   shape="-",colour="red",size=9,
+                   )+
         scale_colour_manual(values=c("#A4D3EE","#4F94CD","#8B4789","black"))+
         theme_metallica()+
         theme(strip.background =element_rect(fill="white"))+
@@ -267,7 +282,7 @@ Sample_df_LOQfilt_cast_for_Norm <- Sample_df_LOQfilt_cast[,-c(1,2)]
 Sam_Pnorm <- Sample_df_LOQfilt_cast_for_Norm/Sample_df_LOQfilt_cast_for_Norm$P
 
 ###
-# Calculate scaling factor -- median P content in AE cells of that batch to bring each metal back to original PPB range
+# Calculate scaling factor -- mean P content in AE cells of that batch to bring each metal back to original PPB range
 
 AErows <- rownames(Sam_Pnorm)[grep("AllEle",rownames(Sam_Pnorm))]
 
@@ -316,9 +331,9 @@ Sample_data_n <- merge(Sample_data_n,od_data, by.x="plate_position",by.y="lop")
 
 Sample_data_n <- merge(Sample_data_n,ConvFac,by.x="plate",by.y="Layout")%>%
                  filter(SpecOD > 0.1)%>%
-                 mutate(ng_perwell = (value * Final_Vol_for_ICPMS))%>%
-                 mutate(pg_percell = (ng_perwell*1000)/
-                                     (SpecOD*1.8 * 10000000 *Volume_perwell_of_culture_transferred_to_filterplate))
+                 mutate(ng_perwell = value)%>% ## ppb = ng/mL -- so PPB = ng/mL and since we had 1mL of digested cell culture (after correction)- this is ng in 1 well that came from 1 dried filter
+                 mutate(pg_percell = (ng_perwell*1000)/ # 1ng = 10000 picograms
+                                     (SpecOD*1.8 * 10000000*Volume_perwell_of_culture_transferred_to_filterplate)) # total number of cells dried on filter
 
 #####################################
 ### Are there any batch effects ? ###
@@ -583,7 +598,7 @@ Atoms_percell_AllEle <- rbind(Atoms_percell_AllEle,published_atoms_percell[,coln
                                                         "Other Study")),
                                 element_measured = factor(element_measured, levels = c("Ca","Cu","Fe","K","Mg","Mn","Mo","Na","P","S","Zn")))
 
-pdf(paste0(plot_dir,"/atomspercell_comparison_with_published_data.pdf"),width=9,height=6)
+pdf(paste0(plot_dir,"/atomspercell_comparison_with_published_data.pdf"),width=12,height=6)
 ggplot(Atoms_percell_AllEle,
        aes(x=element_measured,
            y = log10(Mean_atoms_percell),
@@ -592,11 +607,13 @@ ggplot(Atoms_percell_AllEle,
   geom_point(aes(shape=Pub_or_EPP),
              size=4,alpha=0.8,
              position = position_jitterdodge(jitter.width = 0.2))+
+  geom_errorbar(aes(ymin = log10(Mean_atoms_percell - SD_atoms_percell),
+                    ymax = log10(Mean_atoms_percell + SD_atoms_percell)), width = 0.3)+
   scale_colour_manual(values = c(brewer.pal(8,"Dark2"), "black","darkred"))+
   theme_metallica()
 dev.off()
 
-pdf(paste0(plot_dir,"/atomspercell_comparison_with_published_data_facet.pdf"),width=10,height=12)
+pdf(paste0(plot_dir,"/atomspercell_comparison_with_published_data_facet.pdf"),width=20,height=12)
 ggplot(Atoms_percell_AllEle,
        aes(x = element_measured,
            y = Mean_atoms_percell,
@@ -632,7 +649,9 @@ metallomics <- merge(Sample_data_finalised, meas_conc_axis,by.x=c("element_pertu
 AE_ngperwell_vals <- Sample_data_finalised%>%
                      filter(element_perturbed == "AllEle")%>%
                      group_by(element_measured)%>%
-                     dplyr::summarise(mean_ng_perwell_BC_AE = mean(ng_perwell_BC,na.rm=T))
+                     dplyr::summarise(mean_ng_perwell_BC_AE = mean(ng_perwell_BC,na.rm=T),
+                                      sd_ng_perwell_BC_AE = sd(ng_perwell_BC,na.rm=T),
+                                      cov_ng_perwell_BC_AE = sd_ng_perwell_BC_AE/mean_ng_perwell_BC_AE)
 
 metallomics_AEnorm <- merge(metallomics,AE_ngperwell_vals[,c("element_measured","mean_ng_perwell_BC_AE")],by="element_measured")%>%
                       mutate(Percentage_Change_ngpwell = (ng_perwell_BC-mean_ng_perwell_BC_AE)/mean_ng_perwell_BC_AE,
@@ -640,6 +659,32 @@ metallomics_AEnorm <- merge(metallomics,AE_ngperwell_vals[,c("element_measured",
                       na.omit()
 
 write.csv(metallomics_AEnorm,paste0(outputtables_dir,"/metpertWTmetallomics_Pnorm_AEnorm.csv"),row.names = F)
+
+#####################################
+### Calculate final replicate CVs ###
+#####################################
+
+metallomics_AEnorm_summary_stats <- metallomics_AEnorm %>%
+                                    group_by(BioSpecID, element_measured)%>%
+                                    summarise(mean_ng_perwell_BC = mean(ng_perwell_BC, na.rm=T),
+                                              sd_ng_perwell_BC = sd(ng_perwell_BC,na.rm=T),
+                                              cov_ng_perwell_BC = sd_ng_perwell_BC/mean_ng_perwell_BC
+                                              )%>%
+                                    ungroup()
+
+# COMBINE aLLeLE( CONTROL) summary and all sampe summary 
+AE_ngperwell_vals$BioSpecID = "AllEle"
+colnames(AE_ngperwell_vals) <- c("element_measured","mean_ng_perwell_BC","sd_ng_perwell_BC","cov_ng_perwell_BC","BioSpecID")
+
+metallomics_AEnorm_summary_stats <- rbind(AE_ngperwell_vals[,colnames(metallomics_AEnorm_summary_stats)],metallomics_AEnorm_summary_stats)
+write.csv(metallomics_AEnorm_summary_stats, paste0(outputtables_dir,"/summary_stats_cellular_metallomics_ngperwell.csv"),row.names = F)
+
+Atoms_percell_AllEle_summary_stats <- Atoms_percell_AllEle%>%
+                                      mutate(cov_atoms_percell = SD_atoms_percell/Mean_atoms_percell)%>%
+                                      na.omit()
+write.csv(Atoms_percell_AllEle_summary_stats, paste0(outputtables_dir,"/summary_stats_cellular_metallomics_pgpercell_AllElesamplesonly.csv"),row.names = F)
+
+
 
 buffering_df_allpoints <- metallomics_AEnorm %>%
                           filter(element_perturbed == element_measured)%>%
@@ -689,7 +734,7 @@ dev.off()
 
 for_metmet_correlation <- metallomics_AEnorm%>%
                           dplyr::select(element_measured, element_perturbed,rel_env_element_concentration_actual,Ratio_to_AEngperwell)%>%
-                          filter(!element_measured %in% c("P","S"))
+                          filter(!element_measured %in% c("P","S","Mo","Cu"))
 
 # Apply the function for each unique pair of element_measured & element_perturbed
 metmet_correlations <- for_metmet_correlation %>%
@@ -773,7 +818,13 @@ dev.off()
 
 ## write metal-metal correlations to file
 
-write.csv(metmet_correlations[,-3], paste0(outputtables_dir,"/metalperturbed_metalmeasured_correlations.csv"),row.names = F)
+metmet_correlations_siglab <- metmet_correlations[,-3]%>%
+                              mutate(significant_pearson = ifelse(abs(pearson) > 0.8 & p_value_pearson < 0.05,
+                                                            TRUE, FALSE),
+                                     significant_spearman = ifelse(abs(spearman) > 0.8 & p_value_spearman < 0.05,
+                                                            TRUE, FALSE))
+
+write.csv(metmet_correlations_siglab, paste0(outputtables_dir,"/metalperturbed_metalmeasured_correlations.csv"),row.names = F)
 
 
 ####################################################

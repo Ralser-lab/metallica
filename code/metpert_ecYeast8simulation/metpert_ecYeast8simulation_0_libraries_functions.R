@@ -32,3 +32,22 @@ convert_percabsdeviation_to_colour <- function(pad) {
   
   return(color)
 }
+
+
+
+convert_num_literature_metalanno_to_color <- function(num_metal) {
+  #  pad - is a percentage absolute deviation of an ORF
+  # check input
+  if(!is.numeric(num_metal) || any(num_metal < 0)) {
+    stop("Input should be numeric and greater than 0")
+  }
+  
+  # Define color palette
+  nummet_palette <- viridis(4,direction = -1, begin = 0, end = 0.8)
+  
+
+  color <- nummet_palette[num_metal+1]
+  
+  return(color)
+}
+

@@ -9,7 +9,7 @@
 ### source paths ###
 ####################
 
-source("/camp/lab/ralserm/working/Simran Aulakh/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 
 ### Make layout File ###
 
@@ -21,7 +21,7 @@ for( i in 1:length(lo_fns)){
   
   layout <- read.csv(paste0(lo_dir,"/media4cellgrowth_layouts/",lo_fns[i]), stringsAsFactors = F)
   colnames(layout) <- c("Row",1:12)
-  layout_melted <- na.omit(melt(layout,id.vars = c("Row")))
+  layout_melted <- na.omit(reshape2::melt(layout,id.vars = c("Row")))
   layout_melted$position <- paste0(layout_melted$Row,layout_melted$variable)
   layout_melted <- layout_melted[,-c(1,2)]
   colnames(layout_melted) <- c("condition","position")

@@ -86,7 +86,7 @@ dir.create(outputtables_dir, recursive = T)
 
 # protein abundances and relative ( fold difference values)
 
-proteomics_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/lmfit DE res with PQ and SigNotSig AdjPVthresh 0.05 FCthresh 1.5.csv"),stringsAsFactors = F)%>%
+proteomics_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/lmfit_DE_res_with_PQ_and_SigNotSig_AdjPVthresh_0.05_FCthresh_1.5.csv"),stringsAsFactors = F)%>%
                     dplyr::select(BioSpecID,Element, Genes,ORF, Log2.Protein.Quantity.,Log2FC_vs_AE)%>%
                     unique()
 

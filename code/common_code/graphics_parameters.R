@@ -2,16 +2,21 @@ library(showtext)
 library(viridis)
 library(ggplot2)
 library(ggrepel)
-font_add_google("Tinos")
-showtext_auto()
+library(patchwork)
+library(gridExtra)
+library(UpSetR)
+library(extrafont)
+library(ggpattern)
+
+loadfonts(device = "all", quiet = TRUE)
 
 
 theme_metallica <- function(base_size = 25) {
   # Starts with theme_grey and then modify some parts
   theme_minimal(base_size = base_size) %+replace%
     theme(
-      text = element_text(family = "Tinos"),
-      strip.background = element_rect(colour="black",fill=NA,size = 0.15),
+ #     text = element_text(family = "Arial"),
+      strip.background = element_rect(colour="black",fill=NA,linewidth = 0.15),
       strip.text.x = element_text(size = 20,
                                   margin = margin(.2,0,.2,0, "cm")),
       strip.text.y = element_text(size = 20,
@@ -21,20 +26,20 @@ theme_metallica <- function(base_size = 25) {
       
       axis.text.x = element_text(size=16),
       axis.text.y = element_text(size=16,hjust=1),
-      axis.ticks =  element_line(colour = "black", size = 0.2), 
+      axis.ticks =  element_line(colour = "black", linewidth = 0.2), 
       axis.title.x= element_text(size=18),
       axis.title.y= element_text(size=18,angle=90,vjust=3),
       
       panel.background = element_blank(), 
-      panel.border = element_rect(colour="black",fill = NA,size=0.15), 
+      panel.border = element_rect(colour="black",fill = NA, linewidth=0.15), 
       panel.grid.major = element_blank(), 
       panel.grid.minor = element_blank(), 
       
       plot.background = element_blank(), 
       plot.margin = unit(c(0.75,  0.75, 0.75, 0.75), "lines"),
       
-      axis.line.x = element_line(color="black", size = 0.1),
-      axis.line.y = element_line(color="black", size = 0.1)
+      axis.line.x = element_line(color="black", linewidth = 0.1),
+      axis.line.y = element_line(color="black", linewidth = 0.1)
     )
 }
 
@@ -291,7 +296,12 @@ colkey_dataset <-  c("metdepKOgrowth" = "#FFD39BB3",
                      "y5kmetalspecific" = "#BCD2EEB3",
                       "metpertWTproteomics" = "#3A5FCDB3")
   
-## colkey_datasets_circos <- c("Meas_in_any" = "#EEDC82","Hit_in_any"  = 	"#B0171F", "SGD_anno_unchar" = "#CDCDC1", "In_GO_MF" = "#9BCD9B","In_MetPDBessmet" = "#DDA0DD" ,"In_KOgrowth" = "#CD8500","In_hdPCA" = "#A2CD5A","In_proteomics"= "#104E8B")
+colkey_dataset_circos <- c(
+                            "metdepKOgrowth" = "#EEDC82",
+                            "KOmetallomics" = "#CD8500",
+                            "OEmetallomics" = "#DDA0DD", 
+                            "y5kmetalspecific" = "#9BCD9B",
+                            "metpertWTproteomics"= "#104E8B")
 
 #colkey_datasets_circos_darker <- c("Meas_in_any" = "#EEC900",
 #                    "Hit_in_any"  = 	"#B0171F",

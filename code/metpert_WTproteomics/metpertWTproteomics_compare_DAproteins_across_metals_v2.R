@@ -15,10 +15,9 @@ library(UpSetR)
 library(ggrepel)
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
-
 
 plot_dir <- paste0(metpert_WTproteomics_dir,"/output/plots/comparison_between_metals")
 dir.create(plot_dir, recursive = T)
@@ -54,8 +53,7 @@ names(lmfitres_intracell_n)[which(names(lmfitres_intracell_n) == "Element")] <- 
 extra_intra_cross_sig <- merge(lmfitres_extracell_n, lmfitres_intracell_n, by=c("ORF", "Genes"))
 
 # Select required columns
-extra_intra_cross_sig <- extra_intra_cross_sig[,c("ORF", "Genes", "extracellular_element_sig_in", "intracellular_element_sig_in")]
-
+extra_intra_cross_sig <- unique(na.omit(extra_intra_cross_sig[,c("ORF", "Genes", "extracellular_element_sig_in", "intracellular_element_sig_in")]))
 ## Count total proteins that were diff abundt alogn env of 1 and intarcellular of another 
 
 tot_cross_metal_extInt_DA <- unique(filter(extra_intra_cross_sig, extracellular_element_sig_in != intracellular_element_sig_in)$ORF)
@@ -64,8 +62,6 @@ length(tot_cross_metal_extInt_DA)
 # Filter rows where extracellular_element_sig_in is not equal to intracellular_element_sig_in
 #extra_intra_cross_sig <- extra_intra_cross_sig[extra_intra_cross_sig$extracellular_element_sig_in != extra_intra_cross_sig$intracellular_element_sig_in,]
 
-# Remove rows with NA values
-extra_intra_cross_sig <- unique(na.omit(extra_intra_cross_sig))
 
 # Print the dataframe
 print(extra_intra_cross_sig)
@@ -159,6 +155,9 @@ ggplot(filter(met_hits_corrs),
        colour = "metal \nperturbed")
 dev.off()
 
+
+intracell_hits_HyperGSAres <- run_elewise_hyperGSA(intra_hits_df, "intrametVsprotabun")
+extracell_hits_HyperGSAres<- run_elewise_hyperGSA(extra_hits_df, "extrametVsprotabun")
 
 
 
@@ -291,9 +290,9 @@ ggplot(data = filter(results_df_forplot, correlation_threshold == 0.8),
        aes(x = extracellular_element,
            colour = extracellular_element,
            fill = extracellular_element))+
-  geom_bar(aes(y =  overlapped_ORFs), stat = "identity", width = 0.6,alpha = 0)+
+  geom_bar(aes(y =  overlapped_ORFs), stat = "identity", width = 0.5,alpha = 0)+
   geom_bar(aes(y =  overlapped_ORFs_explained_by_corr),
-               stat = "identity", width = 0.6, alpha = 0.6)+
+               stat = "identity", width = 0.5, alpha = 0.6)+
   geom_text(aes(y =  overlapped_ORFs_explained_by_corr+15,
                 label = paste0(100*round(fraction_explained_by_corr,2),"%")),
                 colour = "black")+
@@ -304,3 +303,5 @@ ggplot(data = filter(results_df_forplot, correlation_threshold == 0.8),
   labs(x= "",y = "border:total overlapping ORFs\n fill:overlaps explained by metal correlations")
 dev.off()
   
+
+

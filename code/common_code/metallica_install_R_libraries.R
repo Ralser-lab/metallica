@@ -12,13 +12,21 @@ install.packages(c("tidyr",
                    "tidyverse",
                    "reshape2",
                    "readxl",
-                   "DT"
+                   "DT",
+                   "lubridate",
+                   "doParallel",
+                   "stringr"
                    ))
 
+# bioinformatics
+
+install.packages("gprofiler2"
+                 )
 
 # graphics
 
 install.packages(c("ggplot2",
+                   "ggpattern",
                    "plotly",
                    "patchwork",
                    "gridExtra",
@@ -26,7 +34,11 @@ install.packages(c("ggplot2",
                    "RColorBrewer",
                    "ggrepel",
                    "ggcorrplot",
-                   "UpSetR"
+                   "UpSetR",
+                   "pheatmap",
+                   "showtext",
+                   "venn",
+                   'R.utils'
                    ))
 
 # install Bioconductor
@@ -35,7 +47,8 @@ install.packages("BiocManager")
 
 # install Bioconductor libraries
 
-
+BiocManager::install(pkgs = c("IRanges","S4Vectors","GenomeInfoDb","KEGGREST","org.Sc.sgd.db","piano","DEP",
+                              "clusterProfiler", "PCAtools","ggkegg"))
 
 # install devtools
 
@@ -47,5 +60,11 @@ library(devtools)
 
 devtools::install_github("sprouffske/growthcurver")
 
+# for circular plots in R
+devtools::install_github("jokergoo/circlize")
+
+devtools::install_github("symbioticMe/proBatch", build_vignettes = TRUE)
+
 devtools::install_github("https://github.com/vdemichev/diann-rpackage")
 
+install_github('ievaKer/aPEAR')

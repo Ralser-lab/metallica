@@ -6,13 +6,14 @@
 #`  Description: summarises results of the growth screen of y5k KO library on metal depletion media
 #`---
 
+library(R.utils)
 
 #############################################
 ### source paths functions and libraries  ###
 #############################################
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,'/common_code/graphics_parameters.R'))
 
 source(paste0(code_dir,'/common_code/database_identifier_conversion_functions.R'))
@@ -38,9 +39,10 @@ dir.create(output_tables_dir, recursive = T)
 ### read in  data and filter for metal related knockouts ###
 ############################################################
 
-GO_gset_MF_binding_metalwise_smry <- GO_gset_MF_binding_metalwise%>%
+GO_gset_MF_binding_metalwise_smry <- GO_MF_all_metal_related_anno%>%
+                                     filter(term != "unspecific")%>%
                                      group_by(term)%>%
-                                     summarize(num_ORFs = length(ORF))%>%
+                                     summarize(num_ORFs = length(unique(ORF)))%>%
                                      ungroup()
                                      
 
@@ -83,7 +85,7 @@ y5k_metalrelated_metalspecific_KOs_pvalues <- read.csv(paste0(published_dataset_
                                               mutate(KO = as.character(KO))%>%
                                               separate(col=KO, into = c(NA,NA,NA,NA,"KO",NA,NA),sep="_",remove=F)%>%
                                               filter(KO != "qc")%>%
-                                              filter(KO %in% c(unique(GO_gset_MF_binding_metalwise$ORF)))%>%
+                                              filter(KO %in% c(unique(filter(GO_MF_all_metal_related_anno,term != "unspecific")$ORF)))%>%
                                               unique()%>%
                                               na.omit()%>%
                                               group_by(KO, Protein.Group)%>%
@@ -97,7 +99,8 @@ y5k_metalrelated_metalspecific_KOs_protquants <-  fread(paste0(published_dataset
                                                     mutate(KO = as.character(KO))%>%
                                                     separate(col=KO, into = c(NA,NA,NA,NA,"KO",NA,NA),sep="_",remove=F)%>%
                                                     filter(KO != "qc")%>%
-                                                    filter(KO %in% c(unique(GO_gset_MF_binding_metalwise$ORF)))%>%
+                                                    filter(KO %in% c(unique(filter(GO_MF_all_metal_related_anno,term != "unspecific")$ORF)))%>%
+                                                    unique()%>%
                                                     na.omit()%>%
                                                     group_by(KO, Protein.Group)%>%
                                                     summarize(Protein.Quantity = mean(Protein.Quantity))%>%
@@ -130,7 +133,11 @@ y5k_metalrelated_metalspecific_KOs <- merge(y5k_metalrelated_metalspecific_KOs,y
 y5k_metalrelated_metalspecific_KOs <- merge(y5k_metalrelated_metalspecific_KOs,y5k_prmeas_ProtName_map, by = "Protein.Group")
 
 # merge with metal specific annotation
-y5k_metalrelated_metalspecific_KOs<- merge(y5k_metalrelated_metalspecific_KOs,GO_gset_MF_binding_metalwise,by.x = "KO", by.y = "ORF")
+
+y5k_metalrelated_metalspecific_KOs<- merge(y5k_metalrelated_metalspecific_KOs,rbind(GO_gset_MF_binding_metalwise,
+                                                                                                      GO_gset_MF_transporter_metalwise,
+                                                                                                      philpott_metal_transporter_df),by.x = "KO", by.y = "ORF")%>%
+                                    unique()
 
 write.csv(y5k_metalrelated_metalspecific_KOs, paste0(published_dataset_dir,"/y5k_proteomics/y5k_metalrelatedKOs_metalspecific.csv"),row.names = F)
 
@@ -140,7 +147,7 @@ write.csv(y5k_metalrelated_metalspecific_KOs, paste0(published_dataset_dir,"/y5k
 #############################
 
 y5k_metalrelated_metalspecific_KOs_numhits_smry <- y5k_metalrelated_metalspecific_KOs%>%
-                                                   filter(p_value < 0.01 & abs(log2FC) > log2(1.5))%>%
+                                                   filter(p_value < 0.05 & abs(log2FC) > log2(1.5))%>%
                                                    dplyr::select(Protein.Group,term)%>%
                                                    unique()%>%
                                                    group_by(term)%>%
@@ -178,50 +185,6 @@ ggplot(y5k_metsp_numhits_normalised,
        y = "num sig DA")
 dev.off()
 
-############################
-### GSEA with gprofiler2 ###
-############################
-
-y5k_metalrelated_metalspecific_KOs_forgp <-  y5k_metalrelated_metalspecific_KOs%>%
-                                              filter(p_value < 0.01 & abs(log2FC) > log2(1.5))%>%
-                                              dplyr::select(Protein.Group,term)%>%
-                                              unique()%>%
-                                              mutate(ORF = as.character(lapply(Protein.Group, convert_Uniprot2singleORF)))
-                                              
-# set background for enrichments 
-background_ORFs <- as.character(unlist(lapply(as.character(unique(y5k_metalrelated_metalspecific_KOs$Protein.Group)),convert_Uniprot2singleORF)))
-
-# Run the gene set enrichment analysis
-gsea_results_any_metal <- gost(query =  unique(y5k_metalrelated_metalspecific_KOs_forgp$ORF),
-                               organism = "scerevisiae",
-                               multi_query = T, 
-                               custom_bg = background_ORFs,
-                               domain_scope = "custom", 
-                               sources = c("GO:MF","GO:BP","KEGG","TF"))
-
-top_terms <- gsea_results_any_metal$result %>%
-             filter(p_values < 0.05)%>%
-             pull(term_id)
-
-p <- gostplot(gsea_results_any_metal, capped = TRUE, interactive = F)
-go_enrichres_plot<- publish_gostplot(p, 
-                                     highlight_terms = top_terms,
-                                     width = 10, 
-                                     height = 15,
-                                     filename = paste0(plot_dir,"/y5kmetspecific_gprofiler_enrich_result_anymetal",
-                                                       "_overrep.pdf"))
-
-
-
-
-
-
-
-
-
-
-
-
 ##################################
 ### Light df for metallica app ###
 ##################################
@@ -239,6 +202,6 @@ for_metallica_app <- y5k_metalrelated_metalspecific_KOs %>%
                      unique()
 
 
-write.csv(for_metallica_app,paste0(metallica_app_dir,"/metallica_app_y5kmetspecificKOs.csv"), row.names = F)
+write.csv(for_metallica_app,paste0(metallica_app_dir,"/data/metallica_app_y5kmetspecificKOs.csv"), row.names = F)
 
 

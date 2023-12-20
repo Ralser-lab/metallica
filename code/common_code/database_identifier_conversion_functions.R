@@ -11,8 +11,10 @@
 #####################################
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 library(dplyr)
+library(KEGGREST)
+
 #######################################
 ### Read in uniprot conversion file ###
 #######################################
@@ -23,6 +25,11 @@ GenProt_SGD <- read.csv(paste0(db_dir,"/uniprot_allScerevisiae_20230208.tsv"), s
 
 colnames(GenProt_SGD)<- c("Uniprot.ID","ORF","Gene.Name","Uniprot.Annotation.Score")
 
+GenProt_SGD_smry <- GenProt_SGD %>%
+                    group_by(Uniprot.Annotation.Score)%>%
+                    summarise(num = length(unique(ORF)))%>%
+                    ungroup()%>%
+                    unique()
 
 ## Convert multiple ORF names into multiple rows
 ORFs2bind<- data.frame()
@@ -48,7 +55,7 @@ for(i in 1:nrow(GenProt_SGD)){
   }
 }
 
-GenProt_SGD<-rbind(GenProt_SGD,ORFs2bind)
+GenProt_SGD <- rbind(GenProt_SGD,ORFs2bind)
 
 ## Convert multiple gene names into multiple rows
 genes2bind<- data.frame()
@@ -221,7 +228,6 @@ convert_Uniprot2singleORF <- function(x){
 
 ## convert KEGG reaction ID to list of KEGG pathway
 
-library(KEGGREST)
 
 # Define function
 convert_KEGGrxnID2pathwaylist <- function(reaction_id) {

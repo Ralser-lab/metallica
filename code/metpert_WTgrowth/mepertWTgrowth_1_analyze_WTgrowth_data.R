@@ -10,7 +10,7 @@
 #############################################
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
 
@@ -25,8 +25,8 @@ source(paste0(code_dir,"/metpert_WTgrowth/metpertWTgrowth_0_libraries_functions.
 WTgrowthdata_dir <- paste0(proj_dir,"/experiment_data/metpert_WTgrowth/data_from_TECAN")
 
 # outputs
-plot_dir <- paste0(proj_dir,"/experiment_data/WTgrowthdata/metpert_WTgrowth/results/plots")
-outputtables_dir <- paste0(proj_dir,"/experiment_WTgrowthdata/metpert_WTgrowth/results/output_tables")
+plot_dir <- paste0(proj_dir,"/experiment_data/metpert_WTgrowth/output/plots")
+outputtables_dir <- paste0(proj_dir,"/experiment_data/metpert_WTgrowth/output/tables")
 
 dir.create(plot_dir, recursive = T)
 dir.create(outputtables_dir, recursive = T)
@@ -115,7 +115,11 @@ WTgrowthdata <- WTgrowthdata%>%
                 filter(!(position %in% c("C1","D1","E1","F1")))%>%
                 filter(!(grepl("Na",SampleName) & plate ==5))%>%
                 filter(SampleName != "AllEleprepQC")%>%
-                filter(Time <= 36)
+                filter(SampleName != "Mo 20")%>%
+                filter(Time <= 36)%>%
+                filter(!plate_position %in% c("6_C8","7_D6","3_B10"))%>%
+                mutate(SampleName = gsub("Zn 0.010", "Zn 0.01", SampleName),
+                       SampleName = gsub("Zn 0.0200","Zn 0.02",SampleName))
 
 ####################################################
 ### Plot all growth curves individual media wise ###
@@ -132,6 +136,39 @@ ggplot(WTgrowthdata,aes(x = Time, y = OD600, colour = preculture))+
   scale_color_viridis_d(option="D",begin =0.1,end=0.45)+
   theme_metallica()
 
+dev.off()
+
+
+#########################################
+### Plot all growth curves metal wise ###
+#########################################
+
+WTgrowthdata_noChel <- WTgrowthdata%>%
+                       data.frame()%>%
+                       filter(!grepl("[+]", SampleName) & SampleName != "AllEle New" )%>%
+                       separate(SampleName, into = c("metal","concentration"), sep =" ",remove = F)%>%
+                       mutate(concentration = as.numeric(concentration),
+                              direction = ifelse(concentration > 1,"excess",
+                                                 ifelse(concentration < 1 , "depletion",
+                                                        "control")))%>%
+                       filter(metal != "B")
+
+pdf(paste0(plot_dir,"/growth_curves_metalfacet.pdf"),width = 20,height = 12)
+ggplot(unique(filter(WTgrowthdata_noChel, preculture == "SM0" &
+                metal != "AllEle")[,c("Time",
+                                      "OD600",
+                                      "SampleName",
+                                      "plate_position",
+                                      "metal","direction")]),
+       aes(x = Time,
+           y = OD600,
+           colour = SampleName))+
+  geom_line(aes(group = plate_position), alpha = 0.5, linewidth = 0.5)+
+  geom_point(size = 0.5, alpha = 0.5)+
+  facet_wrap(c("metal", "direction"),ncol = 6)+
+  scale_color_manual(values = colkey_BioSpecID)+
+  theme_metallica()+
+  theme(legend.position = "none")
 dev.off()
 
 ###################################
@@ -498,7 +535,30 @@ print(
 )
 dev.off()
 
+#################################################################
+## Plot all growth rate data in one plot for essential metals ###
+#################################################################
+# read in media metallomics file 
+measured_conc_axis <- read.csv(paste0(metpert_WTmetallomics_dir,"/output/tables/measured_element_concentration_axis.csv"),
+                               stringsAsFactors = F)
 
+GC_fit_results_sum$BioSpecID <- paste(GC_fit_results_sum$element,
+                                      GC_fit_results_sum$element_concentration)
+
+GC_fit_results_sum_test <- merge(GC_fit_results_sum,measured_conc_axis, by = "BioSpecID")%>%
+                           filter(chelator == "None")
+
+pdf(paste0(plot_dir,"/log2_metalconc_vs_medgrowthrate.pdf"),width = 6,height = 3.5)
+ggplot(GC_fit_results_sum_test,
+       aes(x = log2(actual_AEnorm_conc),
+           y = Med.Growth.Rate,
+           colour = element))+
+  geom_smooth(se = T, linewidth = 0.5, alpha = 0.1)+
+  geom_point(size = 3,alpha = 0.6)+
+  scale_colour_manual(values = colkey_Ele)+
+  theme_metallica()+
+  labs()
+dev.off()
 ############################################
 ### Write summarized growth data to disk ###
 ############################################

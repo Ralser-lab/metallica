@@ -7,7 +7,7 @@
 #################
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
 
@@ -16,20 +16,23 @@ source(paste0(code_dir,"/common_code/layout_conversion.R"))
 source(paste0(code_dir,"/metpert_WTproteomics/metpertWTproteomics_0_libraries_functions.R"))
 
 
-plot_dir = paste0(metpert_WTproteomics_dir,"/output/plots")
-qc_plot_dir = paste0(plot_dir,"/qc_plots")
+plot_dir <- paste0(metpert_WTproteomics_dir,"/output/plots/forStat")
+qc_plot_dir <- paste0(plot_dir,"/qc_plots")
 
 dir.create(qc_plot_dir,recursive = T)
 dir.create(paste0(qc_plot_dir,"/alldata_stats"))
 
-intm_data_dir = paste0(paste0(metpert_WTproteomics_dir,"/output/intermediate_datafiles"))
+intm_data_dir <- paste0(paste0(metpert_WTproteomics_dir,"/output/intermediate_datafiles"))
 dir.create(intm_data_dir,recursive = T)
+
+output_tables_dir <- paste0(metpert_WTproteomics_dir,"/output/forStat") 
+dir.create(output_tables_dir,recursive = T)
 
 ########################################
 ### All Element control samples only ###
 ########################################
 
-AE_QCplot_forStat_dir = paste0(qc_plot_dir,"/forStat/AE only")
+AE_QCplot_forStat_dir = paste0(qc_plot_dir,"/AE only")
   
 dir.create(AE_QCplot_forStat_dir,recursive = T)
 
@@ -64,10 +67,10 @@ AE_CVs_preBC <- AE_data%>%
                 mutate(Lo_Prot_PrecID = paste(Layout, Protein.Ids,Precursor.Id,sep="_"),
                        Prot_PrecID=paste(Protein.Ids,Precursor.Id,sep="_"))%>%
                 group_by(Lo_Prot_PrecID)%>%
-                mutate(CV.AE.Intra.Batch = cv(Precursor.Normalised,na.rm = T))%>%
+                mutate(CV.AE.Intra.Batch = sd(Precursor.Normalised,na.rm = T)/mean(Precursor.Normalised,na.rm = T))%>%
                 ungroup()%>%
                 group_by(Prot_PrecID)%>%
-                mutate(CV.AE.Inter.Batch = cv(Precursor.Normalised, na.rm = T))%>%
+                mutate(CV.AE.Inter.Batch = sd(Precursor.Normalised,na.rm = T)/mean(Precursor.Normalised,na.rm = T))%>%
                 mutate(QCtype="Pre Batch Correction")
 
 PrecIDList <- unique(filter(AE_CVs_preBC,CV.AE.Intra.Batch <= 30)$Prot_PrecID)
@@ -106,7 +109,7 @@ DEP_PGquants <- reshape2::dcast ( PG_quants,
 
 ## Note : this will log2 transform all values
 
-SumExp <- make_se(DEP_PGquants,seq(2,ncol(DEP_PGquants)-2),Exp_Design)  
+SumExp <- DEP::make_se(DEP_PGquants,seq(2,ncol(DEP_PGquants)-2),Exp_Design)  
 
 ############################################
 ### Batch Correct at the precursor level ###
@@ -116,11 +119,11 @@ AE_data_MedCorr <- AEmed_correction_Precursor(AE_data)
 
 ### Convert batch corrected data into protein quantities ###
 
-PG_quants_BC<-get_PGQ_df(AE_data_MedCorr)
+PG_quants_BC <- get_PGQ_df(AE_data_MedCorr)
 
 ## Merge PQ_quants with annotation
 
-PG_quants_BC<-merge(PG_quants_BC,
+PG_quants_BC <- merge(PG_quants_BC,
                     unique(AE_data[,c("File.Name","Layout","Element","Element.Concentration",
                                       "Digestion_Batch","TimePoint",
                                       "LO_TP","BioSpecID","Sample.Type","Date","Time")]),
@@ -134,7 +137,7 @@ DEP_PGquants_BC <- reshape2::dcast ( PG_quants_BC,
            ID = Protein.Ids)
 
 
-SumExp_BatchCorr <- make_se(DEP_PGquants_BC,seq(2,ncol(DEP_PGquants_BC)-2),Exp_Design)  
+SumExp_BatchCorr <- DEP::make_se(DEP_PGquants_BC,seq(2,ncol(DEP_PGquants_BC)-2),Exp_Design)  
 
 ######################
 ### Median Scaling ###
@@ -159,7 +162,7 @@ DEP_PGquants_BCMS <- reshape2::dcast ( PG_quants_BCMS,
            ID = Protein.Ids)
 
 
-SumExp_BatchCorrMedSc <- make_se(DEP_PGquants_BCMS,seq(2,ncol(DEP_PGquants_BCMS)-2),Exp_Design)  
+SumExp_BatchCorrMedSc <- DEP::make_se(DEP_PGquants_BCMS,seq(2,ncol(DEP_PGquants_BCMS)-2),Exp_Design)  
 
 ##################################
 ### Collect all SumExp objects ###
@@ -226,20 +229,14 @@ swbp3 <- plot_normalization(SumExp_BatchCorrMedSc)+
           theme(legend.position = "none")
 
 
-setwd(AE_QCplot_forStat_dir)
-
-pdf("Effect of Filtering_BatchCorrection_MedianScaling on data forStat.pdf",width=20,height=20)
-
+pdf(paste0(AE_QCplot_forStat_dir,"/effect_of_filtering_batchcorrection_medianscaling_on_data_forlmfit.pdf"),width=20,height=20)
 idp1
-
 covp1
-
 np1
-
 grid.arrange(pd1)
 dev.off()
 
-pdf("Median protein Quantities across data processing stages forStat.pdf",width=40,height=20)
+pdf(paste0(AE_QCplot_forStat_dir,"/median_protein_quantities_across_data_processing_stages_forlmfit.pdf"),width=40,height=20)
 
 swbp1+swbp2+swbp3+plot_layout(ncol=3)
 
@@ -308,7 +305,7 @@ Fin_wNA_df <- merge(PG_quants_BCMS,sample_anno[,c(1,which(!colnames(sample_anno)
                       `Log2(Protein.Quantity)` = log2(Protein.Quantity))%>%
               filter(BioSpecID != "AllEleprepQC 1")
 
-write.csv(Fin_wNA_df,paste0(output_tables_dir,"/Protein Quantities w NAs_AllEleOnly.csv"),row.names = F)
+write.csv(Fin_wNA_df,paste0(output_tables_dir,"/protein_quantities_w_NAs_AllEleOnly.csv"),row.names = F)
 
 
 ##########################################
@@ -324,7 +321,7 @@ numprot <- Fin_wNA_df %>%
             dplyr::select(Layout,Num_Prot,Digestion_Batch,File.Name)%>%
             unique()
 
-pdf(paste0(AE_QCplot_forStat_dir,"/Number of proteins per layout AE control samples.pdf"),width = 5,height = 4 )
+pdf(paste0(AE_QCplot_forStat_dir,"/number_of_proteins_per_layout_AE_control_samples.pdf"),width = 5,height = 4 )
 ggplot(numprot,
        aes(x=factor(Layout),y=Num_Prot,
            colour=Digestion_Batch,
@@ -332,7 +329,7 @@ ggplot(numprot,
   geom_point(size=3,alpha=0.6,position=position_jitterdodge())+
   scale_color_manual(values= c("darkred","darkblue"))+
   geom_boxplot(alpha=0,colour="black")+
-  theme_SKA()+
+  theme_metallica()+
   theme(legend.position = "bottom",
         panel.grid.major = element_line(colour="black",size = 0.1),
         panel.border = element_rect(size=0.15),
@@ -342,14 +339,14 @@ dev.off()
 
 
 ## Plot protein quantities after median scaling 
-pdf(paste0(AE_QCplot_forStat_dir,"/Median Protein Quantity after diann_maxlfq AEcorr medianscale.pdf"),width=20,height=10,family = "Times")
+pdf(paste0(AE_QCplot_forStat_dir,"/median_protein_quantity_after_diann_maxlfq_AEcorr_medianscale.pdf"),width=20,height=10,family = "Times")
 
 ggplot(PG_quants_BCMS,
        aes( x = File.Name,
             y = log2(Median_Scaled_Protein_Quantity),
             group = File.Name))+
   geom_boxplot(alpha=0.3)+
-  theme_SKA()+
+  theme_metallica()+
   theme(axis.text.x = element_text(angle=90,size=5))
 dev.off()
 
@@ -357,13 +354,13 @@ PG_quants_BCMS_mean<-PG_quants_BCMS%>%
   group_by(File.Name)%>%
   summarize(MeanPQ = mean(Median_Scaled_Protein_Quantity,na.rm = T))
 
-pdf(paste0(AE_QCplot_forStat_dir,"/Mean Protein Quantity after diann_maxlfq AEcorr medianscale.pdf"),width=20,height=10,family = "Times")
+pdf(paste0(AE_QCplot_forStat_dir,"/mean_protein_quantity_after_diann_maxlfq_AEcorr_medianscale.pdf"),width=20,height=10,family = "Times")
 
 ggplot(PG_quants_BCMS_mean,
        aes( x = File.Name,
             y = MeanPQ))+
   geom_bar(stat="identity",fill="navyblue",colour="white")+
-  theme_SKA()+
+  theme_metallica()+
   theme(axis.text.x = element_text(angle=90,size=5))
 
 dev.off()
@@ -373,13 +370,13 @@ PG_quants_BCMS_TPC <- PG_quants_BCMS%>%
                       group_by(File.Name)%>%
                       summarize(Total_Protein_Quantity = sum(Median_Scaled_Protein_Quantity,na.rm = T))
 
-pdf(paste0(AE_QCplot_forStat_dir,"/Total Protein Quantity after diann_maxlfq AEcorr medianscale.pdf"),width=20,height=10,family = "Times")
+pdf(paste0(AE_QCplot_forStat_dir,"/total_protein_quantity_after_diann_maxlfq_AEcorr_medianscale.pdf"),width=20,height=10,family = "Times")
 
 ggplot(PG_quants_BCMS_TPC,
        aes( x = File.Name,
             y = log2(Total_Protein_Quantity)))+
   geom_bar(stat="identity",fill="navyblue",colour="white")+
-  theme_SKA()+
+  theme_metallica()+
   theme(axis.text.x = element_text(angle=90,size=5))
 dev.off()
 
@@ -399,19 +396,13 @@ dir.create(AS_QCplot_forStat_dir,recursive = T)
 ### Input Data ###
 ###################
 
-##########################################################################
-## Read in uniprot - sgd - gene name conversion file to add gene names ###
-##########################################################################
-
-GenProt_SGD <- read.delim(paste0(db_dir,"uniprot_allScerevisiae_20230208.tsv"),sep = "/t",stringsAsFactors = F)
-
 #######################################
 ### Read in Experiment Design files ###
 #######################################
 
-Exp_Design <- read.csv(paste0(intm_data_dir,"/EDP_ExperimentDesign.csv"),stringsAsFactors = F)
+Exp_Design <- read.csv(paste0(intm_data_dir,"/metpertWTproteomics_ExperimentDesign.csv"),stringsAsFactors = F)
 
-Exp_Design_AEonly <- read.csv(paste0(intm_data_dir,"/EDP_ExperimentDesign_AEonly.csv"),stringsAsFactors = F)
+Exp_Design_AEonly <- read.csv(paste0(intm_data_dir,"/metpertWTproteomics_ExperimentDesign_AEonly.csv"),stringsAsFactors = F)
 
 ###############################
 ### Read in All Sample data ###
@@ -843,104 +834,6 @@ dev.off()
 
 #write.csv(cordf,"Replicate correlations Spearman.csv")
 
-##################################################
-##################################################
-### limma Batch Corrected DFs to write to disk ###
-##################################################
-##################################################
-
-# Prepare data with NAs for writing to CSV 
-
-Fin_wNA_df <- merge(PG_quants_limmaBCMS,sample_anno[,c(1,which(!colnames(sample_anno) %in% colnames(PG_quants_limmaBCMS)))],
-                    by="File.Name")%>%
-  data.frame()%>%
- mutate(`Log2(Protein.Quantity)`=log2(Protein.Quantity))%>%
- # reshape2::melt(id.vars="Protein.Ids",variable.name= "File.Name",
-#                 value.name="Log2(Protein.Quantity)")
-  filter(BioSpecID != "AllEleprepQC 1")
-
-
-write.csv(Fin_wNA_df,paste0(output_tables_dir,"/Protein Quantities w NAs limmaBC.csv"),row.names = F)
-
-
-# Calculate per Gene mean, sd, median, mad for AllEle replicates across dataset and write to CSV
-
-AERep_Stats <- Fin_wNA_df%>%
-                filter(BioSpecID == "AllEle 1")%>%
-                group_by(Protein.Ids)%>%
-                mutate(Num.Non.NAs = sum(!is.na(`Log2(Protein.Quantity)`)))%>%
-                ungroup()
-
-## Plot distribution of fraction of controls that are NAs
-
-ggplot(unique(AERep_Stats[,c("Protein.Ids","Num.Non.NAs")]),
-       aes(x=Num.Non.NAs))+
-  geom_histogram(bins=25,colour="darkred",
-                 fill="darkred")+
-  theme_SKA()
-
-AERep_Stats<-AERep_Stats%>%
-  filter(Num.Non.NAs > 10)%>%
-  group_by(Protein.Ids)%>%
-  summarize(SD.Protein.Quant = sd(2^(`Log2(Protein.Quantity)`),na.rm=T),
-            Mean.Protein.Quant = mean(2^(`Log2(Protein.Quantity)`),na.rm=T)
-  )%>%
-  ungroup()%>%
-  mutate(Cov = SD.Protein.Quant/Mean.Protein.Quant)%>%
-  as.data.frame()
-
-rownames(AERep_Stats)<-AERep_Stats$Protein.Ids
-
-write.csv(AERep_Stats,paste0(output_tables_dir,"/AllEle Replicates Protein Quantity Stats limmaBC.csv"),
-                      row.names=F)
-
-
-# Calculate per Gene mean, sd, median, mad for all samples AllEle replicates across dataset and write to CSV
-
-AllSample_Stats <- Fin_wNA_df%>%
-                    filter(!grepl("AllEle",BioSpecID))%>%
-                    group_by(Protein.Ids)%>%
-                    mutate(Num.Non.NAs = sum(!is.na(`Log2(Protein.Quantity)`)))%>%
-                    ungroup()
-
-## Plot distribution of fraction of controls that are NAs
-
-ggplot(unique(AllSample_Stats[,c("Protein.Ids","Num.Non.NAs")]),
-       aes(x=Num.Non.NAs))+
-  geom_histogram(bins=25,colour="darkred",
-                 fill="darkred")+
-  theme_SKA()
-
-AllSample_Stats <- AllSample_Stats%>%
-                    filter(Num.Non.NAs >10)%>%
-                    group_by(Protein.Ids)%>%
-                    summarize(SD.Protein.Quant = sd(2^(`Log2(Protein.Quantity)`),na.rm=T),
-                              Mean.Protein.Quant = mean(2^(`Log2(Protein.Quantity)`),na.rm=T)
-                    )%>%
-                    ungroup()%>%
-                    mutate(Cov = SD.Protein.Quant/Mean.Protein.Quant)%>%
-                    as.data.frame()
-
-rownames(AllSample_Stats) <- AllSample_Stats$Protein.Ids
-
-write.csv(AllSample_Stats,
-          paste0(output_tables_dir,"/AllSample Protein Quantity Stats limmaBC.csv"),row.names=F)
-
-
-Elewise_Stats <- Fin_wNA_df%>%
-                  filter(!grepl("AllEle",BioSpecID))%>%
-                  group_by(Protein.Ids,Element)%>%
-                  summarize(SD.Protein.Quant = sd(2^(`Log2(Protein.Quantity)`),na.rm=T),
-                            Mean.Protein.Quant = mean(2^(`Log2(Protein.Quantity)`),na.rm=T)
-                  )%>%
-                  mutate(Cov = SD.Protein.Quant/Mean.Protein.Quant)%>%
-                  as.data.frame()
-
-rownames(Elewise_Stats) <- paste(Elewise_Stats$Protein.Ids,Elewise_Stats$Element)
-
-write.csv(Elewise_Stats,paste0(output_tables_dir,"/Elewise Protein Quantity Stats limmaBC.csv"),row.names=F)
-
-
 ######################################################
 ######################################################
 ### AE median Batch Corrected DFs to write to disk ###
@@ -953,7 +846,7 @@ Fin_wNA_df <- merge(PG_quants_BCMS,sample_anno[,c(1,which(!colnames(sample_anno)
          `Log2(Protein.Quantity)` = log2(Protein.Quantity))%>%
   filter(BioSpecID != "AllEleprepQC 1")
 
-write.csv(Fin_wNA_df,paste0(output_tables_dir,"/Protein Quantities w NAs.csv"),row.names = F)
+write.csv(Fin_wNA_df,paste0(output_tables_dir,"/metperWTproteomics_protein_quantities_w_NAs_alldata_unfiltered_for_stat.csv"),row.names = F)
 
 
 # Calculate per Gene mean, sd, median, mad for AllEle replicates across dataset and write to CSV
@@ -970,7 +863,7 @@ ggplot(unique(AERep_Stats[,c("Protein.Ids","Num.Non.NAs")]),
        aes(x=Num.Non.NAs))+
   geom_histogram(bins=25,colour="darkred",
                  fill="darkred")+
-  theme_SKA()
+  theme_metallica()
 
 AERep_Stats <- AERep_Stats%>%
                filter(Num.Non.NAs > 10)%>%
@@ -984,7 +877,7 @@ AERep_Stats <- AERep_Stats%>%
 
 rownames(AERep_Stats) <- AERep_Stats$Protein.Ids
 
-write.csv(AERep_Stats,paste0(output_tables_dir,"/AllEle Replicates Protein Quantity Stats.csv"),row.names=F)
+write.csv(AERep_Stats,paste0(output_tables_dir,"/AllEle_replicates_protein_quantity_stats.csv"),row.names=F)
 
 
 # Calculate per Gene mean, sd, median, mad for all samples AllEle replicates across dataset and write to CSV
@@ -1001,11 +894,11 @@ ggplot(unique(AllSample_Stats[,c("Protein.Ids","Num.Non.NAs")]),
        aes(x=Num.Non.NAs))+
   geom_histogram(bins=25,colour="darkred",
                  fill="darkred")+
-  theme_SKA()
+  theme_metallica()
 
 AllSample_Stats <- AllSample_Stats%>%
                     filter(Num.Non.NAs >10)%>%
-                    group_by(Protein.Ids)%>%
+                    group_by(Protein.Ids,BioSpecID)%>%
                     summarize(SD.Protein.Quant = sd(2^(`Log2(Protein.Quantity)`),na.rm=T),
                               Mean.Protein.Quant = mean(2^(`Log2(Protein.Quantity)`),na.rm=T)
                     )%>%
@@ -1013,28 +906,11 @@ AllSample_Stats <- AllSample_Stats%>%
                     mutate(Cov = SD.Protein.Quant/Mean.Protein.Quant)%>%
                     as.data.frame()
 
-rownames(AllSample_Stats) <- AllSample_Stats$Protein.Ids
+write.csv(AllSample_Stats,paste0(output_tables_dir,"/AllSample_protein_quantity_replicate_stats.csv"),row.names=F)
 
-write.csv(AllSample_Stats,paste0(output_tables_dir,"/AllSample Protein Quantity Stats.csv"),row.names=F)
-
-
-Elewise_Stats <- Fin_wNA_df%>%
-                  filter(!grepl("AllEle",BioSpecID))%>%
-                  group_by(Protein.Ids,Element)%>%
-                  summarize(SD.Protein.Quant = sd(2^(`Log2(Protein.Quantity)`),na.rm=T),
-                            Mean.Protein.Quant = mean(2^(`Log2(Protein.Quantity)`),na.rm=T)
-                  )%>%
-                  mutate(Cov = SD.Protein.Quant/Mean.Protein.Quant)%>%
-                  as.data.frame()
-
-rownames(Elewise_Stats)<-paste(Elewise_Stats$Protein.Ids,Elewise_Stats$Element)
-
-write.csv(Elewise_Stats,paste0(output_tables_dir,"/Elewise Protein Quantity Stats.csv"),row.names=F)
-
-
-Elewise_RepStats <- Fin_wNA_df%>%
+metalwise_replicate_stats <- Fin_wNA_df%>%
                     filter(!grepl("AllEle",BioSpecID))%>%
-                    group_by(Protein.Ids,BioSpecID)%>%
+                    group_by(Protein.Ids,BioSpecID,Element)%>%
                     summarize(SD.Protein.Quant = sd(2^(`Log2(Protein.Quantity)`),na.rm=T),
                               Mean.Protein.Quant = mean(2^(`Log2(Protein.Quantity)`),na.rm=T)
                     )%>%
@@ -1045,16 +921,17 @@ Elewise_RepStats <- Fin_wNA_df%>%
                     ungroup()%>%
                     as.data.frame()
 
-rownames(Elewise_Stats) <- paste(Elewise_Stats$Protein.Ids,Elewise_Stats$Element)
+rownames(metalwise_stats) <- paste(metalwise_stats$Protein.Ids,metalwise_stats$Element)
 
-write.csv(Elewise_Stats,paste0(output_tables_dir,"/Elewise Protein Quantity Replicate Stats.csv"),row.names=F)
+write.csv(metalwise_stats,paste0(output_tables_dir,"/metalwise_protein_quantity_replicate_stats.csv"),row.names=F)
 
-num_proteins <- Elewise_Stats%>%
-               group_by(Element)%>%
-               summarize(Num_Unique_ProtIDs = length(unique(Protein.Ids)))%>%
-               ungroup()
-                
-write.csv(num_proteins,paste0(output_tables_dir,"/Elewise NumProteinsQuantified Branch A stats.csv"),row.names=F)
+num_proteins <- metalwise_stats%>%
+                na.omit()%>%
+                group_by(Element)%>%
+                summarize(Num_Unique_ProtIDs = length(unique(Protein.Ids)))%>%
+                ungroup()
+                  
+write.csv(num_proteins,paste0(output_tables_dir,"/metalwise_num_proteins_quantified_for_lmfit_stats.csv"),row.names=F)
 
 ### Number of proteins ###
 
@@ -1066,7 +943,7 @@ numprot <- Fin_wNA_df %>%
           group_by(Layout,BioSpecID,Digestion_Batch)%>%
           summarize(Num_Prot = length(Protein.Ids))
 
-pdf(paste0(qc_plot_dir,"/Number of proteins per Layout Branch A.pdf"),width = 5,height=4)
+pdf(paste0(qc_plot_dir,"/number_proteins_quantified_per_layout_data_for_lmfit_stats.pdf"),width = 5,height=4)
 ggplot(numprot,
        aes(x=factor(Layout),y=Num_Prot,
            colour=Digestion_Batch,
@@ -1074,7 +951,7 @@ ggplot(numprot,
   geom_point(size=3,alpha=0.6,position=position_jitterdodge())+
   scale_color_manual(values= c("darkred","darkblue"))+
   geom_boxplot(alpha=0,colour="black")+
-  theme_SKA()+
+  theme_metallica()+
   theme(legend.position = "bottom",
         panel.grid.major = element_line(colour="black",size = 0.1),
         panel.border = element_rect(size=0.15),
@@ -1091,14 +968,14 @@ numprot_BioSpecID <- Fin_wNA_df %>%
                     group_by(BioSpecID)%>%
                     summarize(Num_Prot = length(Protein.Ids))
 
-pdf(paste0(qc_plot_dir,"Number of proteins per condition Branch A ylim.pdf"),width = 12,height=5)
-ggplot(numprot,
+pdf(paste0(qc_plot_dir,"/number_proteins_quantified_per_condition_data_for_lmfit_stats.pdfylim.pdf"),width = 12,height=5)
+ggplot(numprot_BioSpecID,
        aes(x=BioSpecID,y=Num_Prot,
            colour=BioSpecID,
        ))+
   geom_point(size=3,alpha=1.0)+
   scale_color_manual(values=colkey_BioSpecID)+
-  theme_SKA()+
+  theme_metallica()+
   theme(
         panel.grid.major = element_line(colour="lightgray",size = 0.1),
         panel.border = element_rect(size=0.15),

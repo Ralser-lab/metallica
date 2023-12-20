@@ -13,7 +13,7 @@
 
 
 # general
-source("/camp/lab/ralserm/working/Simran Aulakh/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,'/common_code/graphics_parameters.R'))
 
 ############################################################
@@ -29,7 +29,7 @@ source(paste0(code_dir,'/common_code/input_processed_databases_publisheddatasets
 ###################################################
 
 
-metpert_WTprot_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/lmfit DE res with PQ and SigNotSig AdjPVthresh 0.05 FCthresh 1.5.csv"),stringsAsFactors = F)%>%
+metpert_WTprot_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/extracellularconc_vs_proteinabundance/lmfit DE res with PQ and SigNotSig AdjPVthresh 0.05 FCthresh 1.5.csv"),stringsAsFactors = F)%>%
                        mutate(metal = Element,
                               metal_concentration = Element.Concentration,
                               log2_FCvsAE = Log2FC_vs_AE,
@@ -43,7 +43,7 @@ metpert_WTprot_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/
                        na.omit()
 
 
-write.csv(metpert_WTprot_data, paste0(metallica_app_dir,"/metallica_app_metpertWTproteomics.csv"),row.names = F)
+write.csv(metpert_WTprot_data, paste0(metallica_app_dir,"/data/metallica_app_metpertWTproteomics.csv"),row.names = F)
 
 
 

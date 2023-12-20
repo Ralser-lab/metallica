@@ -8,7 +8,7 @@
 ### source paths functions and libraries  ###
 #############################################
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
 
@@ -77,8 +77,8 @@ names(total_proteins_extracell)[2] <- "total_proteins_extracell"
 names(total_proteins_intracell)[2] <- "total_proteins_intracell"
 
 # Merge total_proteins_extracell and total_proteins_intracell
-total_proteins <- merge(total_proteins_extracell, total_proteins_intracell, by = "Element", all = T)
-
+total_proteins <- data.frame(merge(total_proteins_extracell, total_proteins_intracell, by = "Element", all = T))
+total_proteins[is.na(total_proteins)] <-0
 # Add a new column "total_proteins" which is the maximum of total_proteins_extracell and total_proteins_intracell
 total_proteins$total_proteins <- apply(total_proteins[,c("total_proteins_extracell","total_proteins_intracell")], 1, max)
 
