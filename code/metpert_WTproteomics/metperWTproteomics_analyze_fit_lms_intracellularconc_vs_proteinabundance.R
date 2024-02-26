@@ -9,7 +9,7 @@
 #############################################
 
 # general
-source("/Users/aulakhs/Documents/Ralser Lab/metallica/code/common_code/initialise_common_paths.R")
+source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise_common_paths.R")
 source(paste0(code_dir,"/common_code/graphics_parameters.R"))
 source(paste0(code_dir,"/common_code/layout_conversion.R"))
 
@@ -73,10 +73,10 @@ get_sigres_lms <- function(dfeleprot,gen,ele){
 
 # outputs
 
-plot_dir <- paste0(metpert_WTproteomics_dir,"/output/plots/metallomics_proteomics_coanalysis")
+plot_dir <- paste0(metpert_WTproteomics_dir,"/output/plots/intracellularconc_vs_proteinabundance")
 dir.create(plot_dir, recursive = T)
 
-outputtables_dir <- paste0(metpert_WTproteomics_dir,"/output/tables/metallomics_proteomics_coanalysis")
+outputtables_dir <- paste0(metpert_WTproteomics_dir,"/output/tables/intracellularconc_vs_proteinabundance")
 dir.create(outputtables_dir, recursive = T)
   
   
@@ -86,13 +86,13 @@ dir.create(outputtables_dir, recursive = T)
 
 # protein abundances and relative ( fold difference values)
 
-proteomics_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/lmfit_DE_res_with_PQ_and_SigNotSig_AdjPVthresh_0.05_FCthresh_1.5.csv"),stringsAsFactors = F)%>%
+proteomics_data <- read.csv(paste0(metpert_WTproteomics_dir,"/output/tables/extracellularconc_vs_proteinabundance/lmfit DE res with PQ and SigNotSig AdjPVthresh 0.05 FCthresh 1.5.csv"),stringsAsFactors = F)%>%
                     dplyr::select(BioSpecID,Element, Genes,ORF, Log2.Protein.Quantity.,Log2FC_vs_AE)%>%
                     unique()
 
 # measured intracellular relative metal concentrations
 
-met_quants_df <- read.csv(paste0(metpert_WTmetallomics_dir,"/results/output_tables/metpertWTmetallomics_Pnorm_AEnorm.csv"),stringsAsFactors = F)%>%
+met_quants_df <- read.csv(paste0(metpert_WTmetallomics_dir,"/output/tables/metpertWTmetallomics_Pnorm_AEnorm.csv"),stringsAsFactors = F)%>%
                  filter(!element_measured %in% c("P","S") & BioSpecID != "AllEle" & !(element_measured == "Cu" & Ratio_to_AEngperwell > 2.10))%>%
                  dplyr::select(BioSpecID, element_measured, Ratio_to_AEngperwell)%>%
                  group_by(BioSpecID, element_measured)%>%

@@ -193,6 +193,25 @@ all_datasets <- rbind(metdepKOgrowth,KOmetallomics,OEmetallomics,y5kmetalspecifi
 write.csv(all_datasets, paste0(output_tables_dir,"/all_datasets_combined_significant_or_not.csv"),row.names = F)
 
 
+################################################################################
+### Count what % of uniprot annotation score > 1 proteins were sig in any ds ###
+################################################################################
+
+length(unique(all_datasets$ORF))
+
+all_datasets_sig_in_any <- all_datasets %>%
+  dplyr::select(ORF, Significant, dataset)%>%
+  unique()%>%
+  group_by(ORF)%>%
+  mutate(sig_in_any = any(Significant))%>%
+  ungroup()
+
+sum(unique(all_datasets_sig_in_any[,c("ORF","sig_in_any")])$sig_in_any)
+
+all_datasets_sig_in_any_unp_1more <- merge(all_datasets_sig_in_any, GenProt_SGD, by = "ORF")%>%
+                           filter(Uniprot.Annotation.Score > 1)
+  
+sum(unique(all_datasets_sig_in_any_unp_1more[,c("ORF","sig_in_any")])$sig_in_any)
 
 ############################################################################
 ### count number of ORFs that are shared hits in 1, 2,3,4 and 5 datasets ###

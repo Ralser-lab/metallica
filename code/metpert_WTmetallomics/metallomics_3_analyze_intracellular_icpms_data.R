@@ -27,10 +27,10 @@ od_dir <- paste0(metpert_WTmetallomics_dir,"/od600_at_sampling")
 
 # outputs
 plot_dir <- paste0(metpert_WTmetallomics_dir,"/output/plots/intracellular_metallomics")
-outputtables_dir <- paste0(metpert_WTmetallomics_dir,"/output/tables")
+output_tables_dir <- paste0(metpert_WTmetallomics_dir,"/output/tables")
 
 dir.create(plot_dir, recursive = T)
-dir.create(outputtables_dir, recursive = T)
+dir.create(output_tables_dir, recursive = T)
 
 ####################################################
 ### read in data processed in Agilent MassHunter ###
@@ -539,7 +539,7 @@ ggplot(AE_Pnorm_OD, aes(x = SpecOD,
         theme_metallica()
 dev.off()
 
-write.csv(Sample_data_n,paste0(outputtables_dir,"/metallomics_alldata_batchcorrected.csv"),row.names=F)
+write.csv(Sample_data_n,paste0(output_tables_dir,"/metallomics_alldata_batchcorrected.csv"),row.names=F)
 
 Sample_data_finalised <- Sample_data_n%>%
                       filter(normalization == "Phosphorus" & element_perturbed != "B" & 
@@ -549,7 +549,7 @@ Sample_data_finalised <- Sample_data_n%>%
                                     SpecOD,ng_perwell_BC)
 
 
-write.csv(Sample_data_finalised,paste0(outputtables_dir,"/metallomics_ngperwell_Pnorm.csv"),row.names = F)
+write.csv(Sample_data_finalised,paste0(output_tables_dir,"/metallomics_ngperwell_Pnorm.csv"),row.names = F)
 
 #########################################################################
 ### Convert pg/cell to Atoms / cell and compare to published datasets ###
@@ -636,7 +636,7 @@ dev.off()
 
 # Read in correct metal concentration axis 
 
-meas_conc_axis <- read.csv(paste0(outputtables_dir,"/measured_element_concentration_axis.csv"),
+meas_conc_axis <- read.csv(paste0(output_tables_dir,"/measured_element_concentration_axis.csv"),
                            stringsAsFactors = F)
 
 colnames(meas_conc_axis) <- c("element_perturbed","BioSpecID","rel_env_element_concentration_th","rel_env_element_concentration_actual")
@@ -658,7 +658,7 @@ metallomics_AEnorm <- merge(metallomics,AE_ngperwell_vals[,c("element_measured",
                              Ratio_to_AEngperwell = ng_perwell_BC/mean_ng_perwell_BC_AE)%>%
                       na.omit()
 
-write.csv(metallomics_AEnorm,paste0(outputtables_dir,"/metpertWTmetallomics_Pnorm_AEnorm.csv"),row.names = F)
+write.csv(metallomics_AEnorm,paste0(output_tables_dir,"/metpertWTmetallomics_Pnorm_AEnorm.csv"),row.names = F)
 
 #####################################
 ### Calculate final replicate CVs ###
@@ -677,12 +677,12 @@ AE_ngperwell_vals$BioSpecID = "AllEle"
 colnames(AE_ngperwell_vals) <- c("element_measured","mean_ng_perwell_BC","sd_ng_perwell_BC","cov_ng_perwell_BC","BioSpecID")
 
 metallomics_AEnorm_summary_stats <- rbind(AE_ngperwell_vals[,colnames(metallomics_AEnorm_summary_stats)],metallomics_AEnorm_summary_stats)
-write.csv(metallomics_AEnorm_summary_stats, paste0(outputtables_dir,"/summary_stats_cellular_metallomics_ngperwell.csv"),row.names = F)
+write.csv(metallomics_AEnorm_summary_stats, paste0(output_tables_dir,"/summary_stats_cellular_metallomics_ngperwell.csv"),row.names = F)
 
 Atoms_percell_AllEle_summary_stats <- Atoms_percell_AllEle%>%
                                       mutate(cov_atoms_percell = SD_atoms_percell/Mean_atoms_percell)%>%
                                       na.omit()
-write.csv(Atoms_percell_AllEle_summary_stats, paste0(outputtables_dir,"/summary_stats_cellular_metallomics_pgpercell_AllElesamplesonly.csv"),row.names = F)
+write.csv(Atoms_percell_AllEle_summary_stats, paste0(output_tables_dir,"/summary_stats_cellular_metallomics_pgpercell_AllElesamplesonly.csv"),row.names = F)
 
 
 
@@ -704,7 +704,7 @@ buffering_df_allpoints <- metallomics_AEnorm %>%
                                                                   "Mo 0.2","Mo 0.5","Mo 2"
                                                               )))
 
-write.csv(buffering_df_allpoints,paste0(outputtables_dir,"/metallomics_buffering_summary.csv"), row.names = F)
+write.csv(buffering_df_allpoints,paste0(output_tables_dir,"/metallomics_buffering_summary.csv"), row.names = F)
 
 pdf(paste0(plot_dir,"/metal_buffering.pdf"),width=13,height=6)
 
@@ -779,13 +779,15 @@ spearman_matrix_long<- merge(spearman_matrix_long,p_value_spearman_matrix_long, 
                               sig_high_correlation = ifelse(abs_spearman_correlation > 0.8 &
                                                           spearman_correlation_pvalue < 0.05,T,F ))
 
-write.csv(spearman_matrix_long, paste0("metpert_metmeas_spearmancorrelations.csv"),row.names = T)
+write.csv(spearman_matrix_long, paste0(output_tables_dir,"/metpert_metmeas_spearmancorrelations.csv"),row.names = T)
 
 metmet_correlations_summary <-  spearman_matrix_long%>%
                                 filter(as.character(metal_perturbed)!= as.character(metal_measured))%>%
                                 group_by(metal_perturbed)%>%
                                 summarize(num_sig_corr = sum(sig_high_correlation,na.rm=T))
-write.csv(metmet_correlations_summary, paste0("metpert_metmeas_correlations_summary.csv"),row.names = T)
+
+
+write.csv(metmet_correlations_summary, paste0(output_tables_dir,"/metpert_metmeas_correlations_summary.csv"),row.names = T)
 
 high_correlation_df <- subset(spearman_matrix_long, 
                               abs_spearman_correlation > 0.8 & 
@@ -823,8 +825,8 @@ metmet_correlations_siglab <- metmet_correlations[,-3]%>%
                                                             TRUE, FALSE),
                                      significant_spearman = ifelse(abs(spearman) > 0.8 & p_value_spearman < 0.05,
                                                             TRUE, FALSE))
-
-write.csv(metmet_correlations_siglab, paste0(outputtables_dir,"/metalperturbed_metalmeasured_correlations.csv"),row.names = F)
+colnames(metmet_correlations_siglab)[c(1,2)] <- c("metal_measured","metal_perturbed")
+write.csv(metmet_correlations_siglab, paste0(output_tables_dir,"/metalperturbed_metalmeasured_correlations.csv"),row.names = F)
 
 
 ####################################################

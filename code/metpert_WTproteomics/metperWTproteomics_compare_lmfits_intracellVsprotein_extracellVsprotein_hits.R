@@ -125,34 +125,69 @@ write.csv(overlap_summary_df,paste0(outputtables_dir,"/number_significant_lmresu
 ### Plot top 3 proteins (with lowest pvalues) that are unique in each set and common ###
 ########################################################################################
 
-extracell_df <- dplyr::filter(combined_df, Source == "extracell")
-intracell_df <- dplyr::filter(combined_df, Source == "intracell")
+extracell_only_allmetals <- unique(lmfitres_extracell_filtered$ORF)[which(!unique(lmfitres_extracell_filtered$ORF) %in% unique(lmfitres_intracell_filtered$ORF))]
+intracell_only_allmetals <- unique(lmfitres_intracell_filtered$ORF)[which(!unique(lmfitres_intracell_filtered$ORF) %in% unique(lmfitres_extracell_filtered$ORF))]
 
-extracell_only <- dplyr::anti_join(unique(extracell_df[,c("ORF","Genes","Element","PValAdj_BH","Source","gene_element")]), 
-                                   unique(intracell_df[,c("ORF","Genes","Element","PValAdj_BH","Source","gene_element")]), by = c("ORF", "Genes","Element"))
-intracell_only <- dplyr::anti_join(unique(intracell_df[,c("ORF","Genes","Element","PValAdj_BH","Source","gene_element")]),
-                                   unique(extracell_df[,c("ORF","Genes","Element","PValAdj_BH","Source","gene_element")]), by = c("ORF","Genes", "Element"))
+print(length(extracell_only_allmetals))
+print(length(intracell_only_allmetals))
 
-da_in_both_df <- dplyr::inner_join(unique(intracell_df[,c("ORF","Genes","Element","Source","gene_element")]),
-                               unique(extracell_df[,c("ORF","Genes","Element","PValAdj_BH","Source","gene_element")]),by = c("ORF", "Genes", "Element","gene_element"))
+da_in_both_df <- dplyr::inner_join(unique(lmfitres_extracell_filtered[,c("ORF","Genes","Element","Source","gene_element")]),
+                               unique(lmfitres_intracell_filtered[,c("ORF","Genes","Element","PValAdj_BH","Source","gene_element")]),
+                               by = c("ORF", "Genes", "Element","gene_element"))
+
+# Join the two data frames on ORF
+extra_intra_different_metal <- inner_join(unique(select(lmfitres_extracell_filtered, ORF,Element)),
+                                          unique(select(lmfitres_intracell_filtered, ORF, Element)),
+                         by = "ORF", suffix = c("_extracell", "_intracell"))
+
+extra_intra_different_metal <- extra_intra_different_metal%>%
+                               group_by(ORF)%>%
+                               mutate(ex_int_samemet_any = any(Element_extracell == Element_intracell))%>%
+                               ungroup()%>%
+                               filter(!ex_int_samemet_any)%>%
+                               filter( Element_extracell != Element_intracell)
+
+# View the results
+print(length(unique(extra_intra_different_metal$ORF)))
+
 
 # For unique hits in extracellular vs protein abundance
 
-top3_extracellonly <- extracell_only %>%
+top3_extracellonly <- lmfitres_extracell_filtered%>%
+                      filter(ORF %in% extracell_only_allmetals) %>%
+                      dplyr::select(-Log2FC_vs_AE)%>%
+                      unique()%>%
                       group_by(Element)%>%
-                      top_n(-3,PValAdj_BH)
+                      top_n(-2,PValAdj_BH)
                     
-top3_intracellonly <- intracell_only %>%
+top3_intracellonly <- lmfitres_intracell_filtered%>%
+                      filter(ORF %in% intracell_only_allmetals) %>%
+                      dplyr::select(-median_log2_foldchangevsAE)%>%
+                      unique()%>%
                       group_by(Element)%>%
-                      top_n(-3,PValAdj_BH)
+                      top_n(-2,PValAdj_BH)
 
 top3_both <- da_in_both_df %>%
              group_by(Element)%>%
              top_n(-3,PValAdj_BH)
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_extracell_only_linear.pdf"), width = 26, height = 4)
+top10_extra_intra_diff_metal <- lmfitres_extracell_filtered%>%
+                               mutate(ORF_element = paste(ORF, Element))%>%
+                               filter(ORF_element %in% paste(extra_intra_different_metal$ORF,
+                                                              extra_intra_different_metal$Element_extracell))%>%
+                               dplyr::select(-Log2FC_vs_AE)%>%
+                               unique()%>%
+                               top_n(-10,PValAdj_BH)
+
+top10_extra_intra_diff_metal_imlist <- lmfitres_intracell_filtered%>%
+                                      filter(ORF %in% unique(top10_extra_intra_diff_metal$ORF))%>%
+                                      dplyr::select(-median_log2_foldchangevsAE)%>%
+                                      unique()
+                                      
+
+pdf(paste0(plot_dir, "/trajectories_top3_da_extracell_only_linear.pdf"), width = 16, height = 4)
 print(ggplot(filter(lmfitres_extracell, 
-                    gene_element %in% unique(top3_extracellonly$gene_element) &LeastComplexModel =="linear"),
+                    gene_element %in% unique(top3_extracellonly$gene_element) & LeastComplexModel =="linear"),
              aes(x = log2(Element.Concentration),
                  y = Log2FC_vs_AE,
                  color = BioSpecID)) +
@@ -168,7 +203,7 @@ print(ggplot(filter(lmfitres_extracell,
              x = "Extrcellular Metal Concentration", y = "Log2 Fold Change vs control"))
 dev.off()
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_extracell_only_quadratic.pdf"), width = 12, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_da_extracell_only_quadratic.pdf"), width = 10, height = 4.5)
 print(ggplot(filter(lmfitres_extracell, 
                     gene_element %in% unique(top3_extracellonly$gene_element) & LeastComplexModel == "quadratic"),
              aes(x = log2(Element.Concentration),
@@ -186,7 +221,7 @@ print(ggplot(filter(lmfitres_extracell,
              x = "Extrcellular Metal Concentration", y = "Log2 Fold Change vs control"))
 dev.off()
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_extracell_only_cubic.pdf"), width = 6, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_da_extracell_only_cubic.pdf"), width = 6, height = 4)
 print(ggplot(filter(lmfitres_extracell, 
                     gene_element %in% unique(top3_extracellonly$gene_element) & LeastComplexModel == "cubic"),
              aes(x = log2(Element.Concentration),
@@ -209,7 +244,7 @@ dev.off()
 ### Intracellular only ###
 ##########################
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_intracell_only_linear.pdf"), width = 26.5, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_da_intracell_only_linear.pdf"), width = 16, height = 4)
 print(ggplot(filter(lmfitres_intracell, 
                     gene_element %in% unique(top3_intracellonly$gene_element) & LeastComplexModel == "linear"),
              aes(x = log2(median_relative_intracellular_concentration),
@@ -228,7 +263,7 @@ print(ggplot(filter(lmfitres_intracell,
 dev.off()
 
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_intracell_only_quadratic.pdf"), width = 23, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_da_intracell_only_quadratic.pdf"), width = 16, height = 4)
 print(ggplot(filter(lmfitres_intracell, 
                     gene_element %in% unique(top3_intracellonly$gene_element) & LeastComplexModel == "quadratic"),
              aes(x = log2(median_relative_intracellular_concentration),
@@ -246,7 +281,7 @@ print(ggplot(filter(lmfitres_intracell,
              x = "intracellular metal concentration", y = "Log2 Fold Change vs control"))
 dev.off()
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_intracell_only_cubic.pdf"), width = 29, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_da_intracell_only_cubic.pdf"), width = 17, height = 4)
 print(ggplot(filter(lmfitres_intracell, 
                     gene_element %in% unique(top3_intracellonly$gene_element) & LeastComplexModel == "cubic"),
              aes(x = log2(median_relative_intracellular_concentration),
@@ -269,7 +304,7 @@ dev.off()
 ### Both extracelluar and intracellular ###
 ###########################################
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_ext_linear.pdf"), width = 18, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_ext_linear.pdf"), width = 24, height = 4)
 print(ggplot(filter(lmfitres_extracell, 
                     gene_element %in% unique(top3_both$gene_element) & LeastComplexModel == "linear"),
              aes(x = log2(Element.Concentration),
@@ -287,7 +322,7 @@ print(ggplot(filter(lmfitres_extracell,
              x = "extracellular metal concentration", y = "Log2 Fold Change vs control"))
 dev.off()
 
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_int_linear.pdf"), width = 18, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_int_linear.pdf"), width = 25, height = 4)
 print(ggplot(filter(lmfitres_intracell, 
                     gene_element %in% unique(top3_both$gene_element) & LeastComplexModel == "linear"),
              aes(x = log2(median_relative_intracellular_concentration),
@@ -308,7 +343,7 @@ dev.off()
 ## quadratic
 
 # Plot for extracellular concentration with quadratic model
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_ext_quadratic.pdf"), width = 20, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_ext_quadratic.pdf"), width = 22, height = 4)
 print(ggplot(filter(lmfitres_extracell, 
                     gene_element %in% unique(top3_both$gene_element) & LeastComplexModel == "quadratic"),
              aes(x = log2(Element.Concentration),
@@ -366,8 +401,7 @@ print(ggplot(filter(lmfitres_extracell,
              x = "extracellular metal concentration", y = "Log2 Fold Change vs control"))
 dev.off()
 
-# Plot for intracellular concentration with cubic model
-pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_int_cubic.pdf"), width = 8, height = 4)
+pdf(paste0(plot_dir, "/trajectories_top3_perelement_da_both_int_cubic.pdf"), width = 19.5, height = 4)
 print(ggplot(filter(lmfitres_intracell, 
                     gene_element %in% unique(top3_both$gene_element) & LeastComplexModel == "cubic"),
              aes(x = log2(median_relative_intracellular_concentration),
@@ -378,13 +412,129 @@ print(ggplot(filter(lmfitres_intracell,
         facet_wrap(Element~Genes, scales = "free", nrow = 1) +
         scale_colour_manual(values = colkey_Ele) +
         theme_metallica() +
-        theme(legend.position = "none") +
         geom_hline(yintercept = 0 , size = 0.2)+
         geom_vline(xintercept = 0, size = 0.2)+
+        theme(legend.position = "none") +
         labs(title = "Top 3 Trajectories DA in both - cubic", 
              x = "intracellular metal concentration", y = "Log2 Fold Change vs control"))
 dev.off()
 
+######################################################################################################################
+### Differentially abundant along extracellular concentration of one metal and intracellular conc of another metal ###
+######################################################################################################################
+
+
+pdf(paste0(plot_dir, "/trajectories_top5_da_extint_diffmetal_only_linear_ext.pdf"), width = 6, height = 4)
+print(ggplot(filter(lmfitres_extracell, 
+                    gene_element %in% unique(top10_extra_intra_diff_metal$gene_element) & LeastComplexModel =="linear"),
+             aes(x = log2(Element.Concentration),
+                 y = Log2FC_vs_AE,
+                 color = BioSpecID)) +
+        geom_point(size = 3, alpha = 0.8) +
+        geom_smooth(method = "lm", formula = y ~ x, color = "black") +
+        facet_wrap(Element~Genes, scales = "free", nrow = 1) +
+        scale_colour_manual(values = colkey_BioSpecID) +
+        geom_hline(yintercept = 0 , size = 0.2)+
+        geom_vline(xintercept = 0, size = 0.2)+
+        theme_metallica() +
+        theme(legend.position = "none") +
+        labs(title = " ", 
+             x = "Extrcellular Metal Concentration", y = "Log2 Fold Change vs control"))
+dev.off()
+
+pdf(paste0(plot_dir, "/trajectories_top5_da_extint_diffmetal_only_quadratic_ext.pdf"), width = 6, height = 4)
+print(ggplot(filter(lmfitres_extracell, 
+                    gene_element %in% unique(top10_extra_intra_diff_metal$gene_element) & LeastComplexModel == "quadratic"),
+             aes(x = log2(Element.Concentration),
+                 y = Log2FC_vs_AE,
+                 color = BioSpecID)) +
+        geom_point(size = 3, alpha = 0.8) +
+        geom_smooth(method = "lm", formula = y ~ poly(x,2), color = "black") +
+        facet_wrap(Element~Genes, scales = "free", nrow = 1) +
+        scale_colour_manual(values = colkey_BioSpecID) +
+        geom_hline(yintercept = 0 , size = 0.2)+
+        geom_vline(xintercept = 0, size = 0.2)+
+        theme_metallica() +
+        theme(legend.position = "none") +
+        labs(title = "", 
+             x = "Extrcellular Metal Concentration", y = "Log2 Fold Change vs control"))
+dev.off()
+
+pdf(paste0(plot_dir, "/trajectories_top5_da_extint_diffmetal_only_cubic_ext.pdf"), width = 6, height = 4)
+print(ggplot(filter(lmfitres_extracell, 
+                    gene_element %in% unique(top10_extra_intra_diff_metal$gene_element) & LeastComplexModel == "cubic"),
+             aes(x = log2(Element.Concentration),
+                 y = Log2FC_vs_AE,
+                 color = BioSpecID)) +
+        geom_point(size = 3, alpha = 0.8) +
+        geom_smooth(method = "lm", formula = y ~ poly(x,3), color = "black") +
+        facet_wrap(Element~Genes, scales = "free", ncol = 6) +
+        scale_colour_manual(values = colkey_BioSpecID) +
+        theme_metallica() +
+        theme(legend.position = "none") +
+        geom_hline(yintercept = 0 , size = 0.2)+
+        geom_vline(xintercept = 0, size = 0.2)+
+        labs(title = "", 
+             x = "Extrcellular Metal Concentration", y = "Log2 Fold Change vs control"))
+
+dev.off()
+
+
+
+pdf(paste0(plot_dir, "/trajectories_top5_da_extint_diffmetal_only_linear_int.pdf"), width = 23, height = 4)
+print(ggplot(filter(lmfitres_intracell, 
+                    gene_element %in% unique(top10_extra_intra_diff_metal_imlist$gene_element) & LeastComplexModel == "linear"),
+             aes(x = log2(median_relative_intracellular_concentration),
+                 y = median_log2_foldchangevsAE,
+                 color = Element)) +
+        geom_point(size = 3, alpha = 0.8) +
+        geom_smooth(method = "lm", formula = y ~ x, color = "black") +
+        facet_wrap(Element~Genes, scales = "free", nrow = 1) +
+        scale_colour_manual(values = colkey_Ele) +
+        theme_metallica() +
+        theme(legend.position = "none") +
+        geom_hline(yintercept = 0 , size = 0.2)+
+        geom_vline(xintercept = 0, size = 0.2)+
+        labs(title = " ", 
+             x = "intracellular metal concentration", y = "Log2 Fold Change vs control"))
+dev.off()
+
+
+pdf(paste0(plot_dir, "/trajectories_top5_da_extint_diffmetal_only_quadratic_int.pdf"), width = 11, height = 4)
+print(ggplot(filter(lmfitres_intracell, 
+                    gene_element %in% unique(top10_extra_intra_diff_metal_imlist$gene_element) & LeastComplexModel == "quadratic"),
+             aes(x = log2(median_relative_intracellular_concentration),
+                 y = median_log2_foldchangevsAE,
+                 color = Element)) +
+        geom_point(size = 3, alpha = 0.8) +
+        geom_smooth(method = "lm", formula = y ~ poly(x,2), color = "black") +
+        facet_wrap(Element~Genes, scales = "free", nrow = 1) +
+        scale_colour_manual(values = colkey_Ele) +
+        theme_metallica() +
+        theme(legend.position = "none") +
+        geom_hline(yintercept = 0 , size = 0.2)+
+        geom_vline(xintercept = 0, size = 0.2)+
+        labs(title = " ", 
+             x = "intracellular metal concentration", y = "Log2 Fold Change vs control"))
+dev.off()
+
+pdf(paste0(plot_dir, "/trajectories_top5_da_extint_diffmetal_only_cubic_int.pdf"), width = 23, height = 4)
+print(ggplot(filter(lmfitres_intracell, 
+                    gene_element %in% unique(top10_extra_intra_diff_metal_imlist$gene_element) & LeastComplexModel == "cubic"),
+             aes(x = log2(median_relative_intracellular_concentration),
+                 y = median_log2_foldchangevsAE,
+                 color = Element)) +
+        geom_point(size = 3, alpha = 0.8) +
+        geom_smooth(method = "lm", formula = y ~ poly(x,3), color = "black") +
+        facet_wrap(Element~Genes, scales = "free", nrow = 1) +
+        scale_colour_manual(values = colkey_Ele) +
+        theme_metallica() +
+        theme(legend.position = "none") +
+        geom_hline(yintercept = 0 , size = 0.2)+
+        geom_vline(xintercept = 0, size = 0.2)+
+        labs(title = " ", 
+             x = "intracellular metal concentration", y = "Log2 Fold Change vs control"))
+dev.off()
 
 #############################################################################
 ### Export hitlist and protein quantity dataframe for ensemble clustering ###

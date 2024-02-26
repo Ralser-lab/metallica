@@ -19,7 +19,7 @@ metdep_KOgrowth_dir <- paste0(proj_dir,"/experiment_data/metdep_KOgrowth")
 metpert_WTgrowth_dir <- paste0(proj_dir,"/experiment_data/metpert_WTgrowth")
 metpert_WTmetallomics_dir <- paste0(proj_dir,"/experiment_data/metpert_WTmetallomics")
 metpert_WTproteomics_dir <- paste0(proj_dir,"/experiment_data/metpert_WTproteomics")
-metpert_ecYeast8simulation_dir <- paste0(proj_dir,"/experiment_data/metpert_ecYeast8simulation")
+metpert_ecYeast8simulation_dir <- paste0(proj_dir,"/experiment_data/metpert_Yeast8simulation")
 metpert_sim_vs_exp_comparison_dir <- paste0(proj_dir,"/experiment_data/simulation_vs_experiment_comparison")
 
 datasetcomparison_dir <- paste0(proj_dir,"/dataset_comparison")

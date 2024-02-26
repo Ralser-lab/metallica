@@ -857,6 +857,18 @@ AERep_Stats <- Fin_wNA_df%>%
                 mutate(Num.Non.NAs = sum(!is.na(`Log2(Protein.Quantity)`)))%>%
                 ungroup()
 
+## num proteins AE samples
+
+AERep_numprot <- AERep_Stats %>%
+                 dplyr::select(File.Name,Protein.Ids,Protein.Quantity)%>%
+                 unique()%>%
+                 na.omit()%>%
+                 group_by(File.Name)%>%
+                 summarise(num_prot_quantified = n())%>%
+                 ungroup()
+
+mean(AERep_numprot$num_prot_quantified)              
+
 ## Plot distribution of fraction of controls that are NAs
 
 ggplot(unique(AERep_Stats[,c("Protein.Ids","Num.Non.NAs")]),
@@ -887,6 +899,25 @@ AllSample_Stats <- Fin_wNA_df%>%
                     group_by(Protein.Ids)%>%
                     mutate(Num.Non.NAs = sum(!is.na(`Log2(Protein.Quantity)`)))%>%
                     ungroup()
+
+
+AllSample_numprot <- AllSample_Stats%>%
+                      dplyr::select(File.Name,Protein.Ids,Protein.Quantity)%>%
+                      unique()%>%
+                      na.omit()%>%
+                      group_by(File.Name)%>%
+                      summarise(num_prot_quantified = n())%>%
+                      ungroup()
+
+mean(AllSample_numprot$num_prot_quantified)   
+
+
+AllSample_signal_CoV <- AllSample_Stats%>%
+  group_by(Protein.Ids)%>%
+  summarise(signal_cov = sd(Protein.Quantity, na.rm=T)/mean(Protein.Quantity,na.rm=T))%>%
+  ungroup()
+
+mean(AllSample_signal_CoV$signal_cov,na.rm=T)
 
 ## Plot distribution of fraction of controls that are NAs
 
@@ -921,11 +952,11 @@ metalwise_replicate_stats <- Fin_wNA_df%>%
                     ungroup()%>%
                     as.data.frame()
 
-rownames(metalwise_stats) <- paste(metalwise_stats$Protein.Ids,metalwise_stats$Element)
+rownames(metalwise_replicate_stats) <- paste(metalwise_replicate_stats$Protein.Ids,metalwise_replicate_stats$Element)
 
-write.csv(metalwise_stats,paste0(output_tables_dir,"/metalwise_protein_quantity_replicate_stats.csv"),row.names=F)
+write.csv(metalwise_replicate_stats,paste0(output_tables_dir,"/metalwise_protein_quantity_replicate_stats.csv"),row.names=F)
 
-num_proteins <- metalwise_stats%>%
+num_proteins <- metalwise_replicate_stats%>%
                 na.omit()%>%
                 group_by(Element)%>%
                 summarize(Num_Unique_ProtIDs = length(unique(Protein.Ids)))%>%

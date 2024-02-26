@@ -41,11 +41,15 @@ dir.create(output_tables_dir,recursive = T)
 ####################################################################
 
 full_EC <- read.csv(paste0(input_tables_dir,"/allmetals/Full/Output_data/Clustered_full_solo.csv"),stringsAsFactors = F)
-full_EC_SGD <- merge(full_EC, na.omit(unique(GenProt_SGD[,c("ORF","Uniprot.ID","Uniprot.Annotation.Score")])), 
-                 by.x = "ORF",
-                 by.y = "Uniprot.ID")
+colnames(full_EC) <- c("Uniprot.ID","Cluster")
 
-colnames(full_EC_SGD) <- c("Uniprot.ID","Cluster","ORF","Uniprot.Annotation.Score")
+full_EC <- full_EC %>%
+           mutate(ORF = as.character(lapply(Uniprot.ID, convert_Uniprot2singleORF)))
+
+full_EC_SGD <- merge(full_EC, na.omit(unique(GenProt_SGD[,c("ORF","Uniprot.Annotation.Score")])), 
+                 by = "ORF")
+
+colnames(full_EC_SGD) <- c("ORF","Uniprot.ID","Cluster","Uniprot.Annotation.Score")
 
 clus_annostat <- full_EC_SGD %>%
                  group_by(Cluster, Uniprot.Annotation.Score)%>%
@@ -84,12 +88,10 @@ dev.off()
 ### orphan metal binders and transporters ###
 #############################################
 
-full_EC_ORFnames <- full_EC%>%
-                    mutate(ORF = as.character(lapply(ORF,convert_Uniprot2singleORF)))
 
 ## metal binders 
 
-full_EC_orphan_binders <- merge(full_EC_ORFnames,rbind(GO_gset_MF_metalbinding_unspecific,GO_gset_MF_binding_metalwise), by = "ORF", all.x = T)%>%
+full_EC_orphan_binders <- merge(full_EC,rbind(GO_gset_MF_metalbinding_unspecific,GO_gset_MF_binding_metalwise), by = "ORF", all.x = T)%>%
                           mutate(term = ifelse(!is.na(term),term, "none"),
                                  color = ifelse(term == "none","beige",
                                                 ifelse(term == "unspecific","black",
@@ -137,6 +139,8 @@ length(intersect(all_meas_prots,poorly_char_ORFs))
 
 full_EC <- full_EC_SGD %>%
            mutate(GeneName = as.character(lapply(ORF,convert_ORF2SingleGeneName)))
+
+print(paste("num unique proteins in all metal clustering", length(unique(full_EC$Uniprot.ID))))
 
 allmetal_cluster_enrichments <- vector()
 
@@ -222,6 +226,14 @@ for(i in 1:length(unique(full_EC$Cluster))){
 write.csv(allmetal_cluster_enrichments,
           paste0(output_tables_dir,"/hyperGSA_enrichments_per_cluster_allmetalclustering.csv"), row.names = F)
 
+clus_enrich <-  which(c(1:36) %in% unique(allmetal_cluster_enrichments$Cluster))
+
+ORfs_in_full_EC_clus_enrich <- full_EC%>%
+                          filter(Cluster %in% clus_enrich)%>%
+                          pull(ORF)%>%
+                          unique()
+print(paste("num ORFs placed in clustered enriched for functional terms by allmetalEC:",length(ORfs_in_full_EC_clus_enrich)))
+
 #################################
 ### Summarise unchar proteins ###
 #################################
@@ -276,6 +288,18 @@ for(m in 1:length(sig_metals)){
     
   }
 }
+
+# summarise num of clusters per metal
+
+num_clust_per_metal <- metal_wise_clusters%>%
+                       group_by(metal_series)%>%
+                       summarise(num_clusters = max(Cluster))%>%
+                       ungroup()
+
+# num proteins placed in a cluster 
+
+print(paste("num proteins placed in metal wise clusters : ",
+            length(unique(metal_wise_clusters$Uniprot_ID))))
 
 ## Get enrichments for each cluster in each metal series
 
@@ -568,6 +592,47 @@ dev.off()
 metalwise_clusters_annotated <- merge(metal_wise_cluster_enrichments[,c("Cluster","metal","Gset.Term.Enriched", "Gset.Type")],
                                       metal_wise_clusters,by.x = c("Cluster","metal"), by.y = c("Cluster", "metal_series"),
                                       all.y = T)
+
+ORFs_in_enriched_metwise_clusters <- unique(filter(metalwise_clusters_annotated,!is.na(Gset.Term.Enriched))$ORF)
+
+clusters_with_enrichments <- metalwise_clusters_annotated%>%
+                            filter(!is.na(Gset.Term.Enriched))%>%
+                            dplyr::select(metal,Cluster)%>%
+                            unique()
+nrow(clusters_with_enrichments)
+
+
+## plot all clusters with color for whether theres an enrichment and * for poorly characterised proteins
+
+metwise_clusters_enrch_poorlychar_smry <- metalwise_clusters_annotated%>%
+                                          group_by(cluster_metalwise,metal)%>%
+                                          mutate(enrich_present = any(!is.na(Gset_term_enriched_metalwise)),
+                                                 poorly_char_present = any(Uniprot.Annotation.Score < 3))%>%
+                                          ungroup()%>%
+                                          dplyr::select(ORF, metal, cluster_metalwise, enrich_present, poorly_char_present)%>%
+                                          unique()%>%
+                                          group_by(cluster_metalwise,metal,enrich_present, 
+                                                   poorly_char_present)%>%
+                                          summarise(num_proteins = length(unique(ORF)))%>%
+                                          ungroup()%>%
+                                          mutate(alpha = ifelse(enrich_present, 1, 0.7))
+
+pdf(paste0(plot_dir,"/summary/metalwise_clusters_enriched_poorlychar_summary.pdf"),width = 20,height = 6)
+ggplot(metwise_clusters_enrch_poorlychar_smry,
+       aes(x = cluster_metalwise,
+           y = num_proteins,
+           color = metal,
+           fill = metal))+
+  geom_bar(stat ="identity", aes(alpha =alpha), width = 0.5)+
+  geom_text(aes(y = num_proteins + 1, x = paste(metal, cluster_metalwise),
+                label = ifelse(poorly_char_present,"*","")),size =6)+
+  facet_wrap("metal",ncol = 7)
+  scale_fill_manual(values = colkey_Ele)+
+  scale_color_manual(values = colkey_Ele)+
+  theme_metallica()+
+  theme(axis.text.x = element_text(angle = 90))+
+  labs(x = "")
+dev.off()
 #############################################################################################
 ### merge full allmetal clustering with enrichment results for full all metal clustering ####
 #############################################################################################
@@ -575,6 +640,41 @@ metalwise_clusters_annotated <- merge(metal_wise_cluster_enrichments[,c("Cluster
 allmetal_clusters_annotated <- merge( allmetal_cluster_enrichments[,c("Cluster","Gset.Term.Enriched","Gset.Type")], 
                                       full_EC[,c("Cluster","ORF","Uniprot.ID","GeneName")],
                                       by = "Cluster", all.y = T)
+
+ORFs_in_enriched_allmet_clusters <- unique(filter(allmetal_clusters_annotated,!is.na(Gset.Term.Enriched))$ORF)
+
+
+print(paste("total number of ORFs assigned to clusters enriched in functional terms:",length(unique(c(ORFs_in_enriched_metwise_clusters,
+                                                                                                      ORFs_in_enriched_allmet_clusters)))))
+
+
+allmetal_clusters_enrch_poorlychar_smry <- merge(allmetal_clusters_annotated,
+                                                 GenProt_SGD[,c("ORF","Uniprot.Annotation.Score")])%>%
+  group_by(cluster_allmetal)%>%
+  mutate(enrich_present = any(!is.na(Gset_term_enriched_allmetal)),
+         poorly_char_present = any(Uniprot.Annotation.Score < 3))%>%
+  ungroup()%>%
+  dplyr::select(ORF, cluster_allmetal, enrich_present, poorly_char_present)%>%
+  unique()%>%
+  group_by(cluster_allmetal,enrich_present, 
+           poorly_char_present)%>%
+  summarise(num_proteins = length(unique(ORF)))%>%
+  ungroup()%>%
+  mutate(alpha = ifelse(enrich_present, 1, 0.7))
+
+pdf(paste0(plot_dir,"/summary/allmetal_clusters_enriched_poorlychar_summary.pdf"),width = 10,height = 6)
+ggplot(allmetal_clusters_enrch_poorlychar_smry,
+       aes(x = cluster_allmetal,
+           y = num_proteins))+
+  geom_bar(stat ="identity", aes(alpha =alpha), 
+           width = 0.5, colour = "black")+
+  geom_text(aes(y = num_proteins + 1, x = cluster_allmetal,
+                label = ifelse(poorly_char_present,"*","")),size =6)+
+  theme_metallica()+
+  scale_x_continuous(breaks = c(1, 5, 10, 15, 20, 25, 30, 35,40))+
+  labs(x = "")
+dev.off()
+
 
 #############################################
 ### Combine Full and ele-wise clustering ####
@@ -593,6 +693,173 @@ all_ensemble_clustering_annotated <- merge(metalwise_clusters_annotated,allmetal
 
 write.csv(all_ensemble_clustering_annotated,
           paste0(output_tables_dir,"/ensemble_clustering_allresults_annotated.csv"),row.names = F)
+
+#############################################################
+### Count how many terms have something to do with metals ###
+#############################################################
+metal_binding_terms <- GO_gset_MF%>%
+  filter(grepl("binding",term)|
+           grepl("protoheme IX farnesyltransferase activity",term))%>%
+  filter(grepl("calcium",term) |
+           grepl("copper",term) |
+           grepl("cupric",term) |
+           grepl("iron",term) |
+           grepl("magnesium",term) |
+           grepl("manganese",term) |
+           grepl("molybdenum", term) |
+           grepl("potassium", term) |
+           grepl("sodium", term) |
+           grepl("zinc", term) |
+           grepl("heme",term)|
+           grepl("metal",term))%>%
+  filter(!grepl("calcium-dependent",term))%>%
+  pull(term)%>%
+  unique()
+
+metal_transporter_terms <-  unique(filter( GO_gset_MF,
+                                                    # unspecific annotations
+                                                    grepl("metal ion transmembrane transporter activity",term) |
+                                                      # specific - Calcium 
+                                                      grepl("calcium ion transmembrane transporter activity",term)|
+                                                      grepl("calcium:proton antiporter activity",term)|
+                                                      grepl("calcium:sodium antiporter",term) | 
+                                                      grepl("P-type calcium transporter activity",term)|
+                                                      grepl("calcium channel",term)|
+                                                      
+                                                      # Copper
+                                                      grepl("copper chaperone activity",term) |
+                                                      grepl("P-type divalent copper transporter activity",term)|
+                                                      grepl("copper ion transmembrane transporter activity",term)|
+                                                      
+                                                      # Iron 
+                                                      grepl("iron ion transmembrane transporter activity",term)|                      
+                                                      grepl("ferrous iron transmembrane transporter activity",term)|                  
+                                                      grepl("siderophore-iron transmembrane transporter activity",term)|
+                                                      grepl("siderophore uptake transmembrane transporter activity",term)|
+                                                      grepl("ferric-enterobactin transmembrane transporter activity",term)|
+                                                      grepl("iron chaperone activity",term)|   
+                                                      
+                                                      # Potassium
+                                                      grepl("high-affinity potassium ion transmembrane transporter activity",term)|
+                                                      grepl("P-type potassium transmembrane transporter activity",term)|
+                                                      grepl("potassium channel activity",term)|
+                                                      grepl("potassium ion leak channel activity",term)|
+                                                      grepl("potassium ion transmembrane transporter activity",term)|
+                                                      grepl("potassium:chloride symporter activity",term)|
+                                                      grepl("potassium:proton antiporter activity",term)|
+                                                      grepl("voltage-gated potassium channel activity",term)|
+                                                      
+                                                      # Magnesium
+                                                      grepl("magnesium ion transmembrane transporter activity",term)|
+                                                      
+                                                      # Manganese 
+                                                      grepl("ABC-type manganese transporter activity",term)|
+                                                      grepl("manganese ion transmembrane transporter activity",term)|
+                                                      
+                                                      # Molybdenum -- NO ANNOTATIONS
+                                                      
+                                                      # Sodium
+                                                      grepl("calcium:sodium antiporter activity involved in regulation of cardiac muscle cell membrane potential",term)|
+                                                      grepl("P-type sodium transporter activity",term)|
+                                                      grepl("sodium channel activity",term)|
+                                                      grepl("sodium:inorganic phosphate symporter activity",term)|
+                                                      grepl("sodium:proton antiporter activity",term)|
+                                                      
+                                                      # Zinc
+                                                      grepl("low-affinity zinc ion transmembrane transporter activity",term)|
+                                                      grepl("high-affinity zinc transmembrane transporter activity",term)|
+                                                      grepl("zinc ion transmembrane transporter activity",term)
+))%>%
+  pull(term)%>%
+  unique()
+
+all_metal_terms <- c(metal_binding_terms,metal_transporter_terms,other_metal_terms)
+                                        
+metal_related_annos_clusres_MF <- all_ensemble_clustering_annotated%>%
+                                  filter(Gset_type_metalwise == "GO_MF" & Gset_type_allmetal == "GO_MF")%>%
+                                  dplyr::select(ORF,Gset_term_enriched_allmetal, Gset_term_enriched_metalwise)%>%
+                                  reshape2::melt(id.vars = "ORF")%>%
+                                  dplyr::select(ORF,value)%>%
+                                  unique()%>%
+                                  na.omit()%>%
+                                  filter(value != "molecular_function")%>%
+                                  mutate(metal_related_term = ifelse(value %in% all_metal_terms,T,F))
+
+metal_related_annos_clusres_MF_ORFwisesmry <- metal_related_annos_clusres_MF%>%
+                                              group_by(ORF)%>%
+                                              mutate(ORF_2_metrelterm = ifelse(any(metal_related_term),T,F))%>%
+                                              ungroup()%>%
+                                              dplyr::select(ORF, ORF_2_metrelterm)%>%
+                                              unique()
+length(unique(metal_related_annos_clusres_MF_ORFwisesmry$ORF))
+sum(metal_related_annos_clusres_MF_ORFwisesmry$ORF_2_metrelterm)
+
+metal_related_annos_clusres_MF_totaltermsmry <- metal_related_annos_clusres_MF%>%
+  dplyr::select(value,metal_related_term)%>%
+  unique()
+                                                
+length(unique(metal_related_annos_clusres_MF_totaltermsmry$value))
+sum(metal_related_annos_clusres_MF_totaltermsmry$metal_related_term)         
+
+## GO _CC 
+metal_related_annos_clusres_CC <- all_ensemble_clustering_annotated%>%
+  filter(Gset_type_metalwise == "GO_CC" & Gset_type_allmetal == "GO_CC")%>%
+  dplyr::select(ORF,Gset_term_enriched_allmetal, Gset_term_enriched_metalwise)%>%
+  reshape2::melt(id.vars = "ORF")%>%
+  dplyr::select(ORF,value)
+
+metal_related_annos_clusres_CC_ORFwisesmry <- metal_related_annos_clusres_CC%>%
+  dplyr::select(ORF,value)%>%
+  unique()%>%
+  group_by(ORF)%>%
+  mutate(mitochondria = ifelse(grepl("mitochondria",value),T,F),
+         golgi = ifelse(grepl("Golgi",value),T,F),
+         ER = ifelse(grepl("ER",value),T,
+                     ifelse(grepl("endoplasmic",value),T,F)),
+         ribosome = ifelse(grepl("ribosom",value),T,F))%>%
+  ungroup()
+
+length(unique(metal_related_annos_clusres_CC_ORFwisesmry$ORF))
+sum(unique(metal_related_annos_clusres_CC_ORFwisesmry[,c("ORF","mitochondria")])$mitochondria)
+
+sum(unique(metal_related_annos_clusres_CC_ORFwisesmry[,c("ORF","ER")])$ER)
+sum(unique(metal_related_annos_clusres_CC_ORFwisesmry[,c("ORF","ribosome")])$ribosome)
+sum(metal_related_annos_clusres_CC_ORFwisesmry$golgi)
+
+
+### Biological process
+
+metal_related_annos_clusres_BP <- all_ensemble_clustering_annotated%>%
+  filter(Gset_type_metalwise == "GO_BP" & Gset_type_allmetal == "GO_BP")%>%
+  dplyr::select(ORF,Gset_term_enriched_allmetal, Gset_term_enriched_metalwise)%>%
+  reshape2::melt(id.vars = "ORF")%>%
+  dplyr::select(ORF,value)
+
+
+metal_related_annos_clusres_BP_ORFwisesmry <- metal_related_annos_clusres_BP%>%
+  dplyr::select(ORF,value)%>%
+  unique()%>%
+  group_by(value)%>%
+  summarise(count = n())
+  
+
+
+### KEGG
+
+metal_related_annos_clusres_KEGG <- all_ensemble_clustering_annotated%>%
+  filter(Gset_type_metalwise == "KEGG" & Gset_type_allmetal == "KEGG")%>%
+  dplyr::select(ORF,Gset_term_enriched_allmetal, Gset_term_enriched_metalwise)%>%
+  reshape2::melt(id.vars = "ORF")%>%
+  dplyr::select(ORF,value)
+
+
+metal_related_annos_clusres_KEGG_ORFwisesmry <- metal_related_annos_clusres_KEGG%>%
+  dplyr::select(ORF,value)%>%
+  unique()%>%
+  group_by(value)%>%
+  summarise(count = n())
+  
+############################################
 
 poorly_characterise_all_ensemble_clustering_annotated <-
   unique(filter(all_ensemble_clustering_annotated,Uniprot.Annotation.Score < 3))

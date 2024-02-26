@@ -18,8 +18,13 @@ setwd(db_dir)
 
 GO_gset=read.csv("ORF2GO_all_gsets.csv",stringsAsFactors = F)
 GO_gset_MF=unique(filter(GO_gset,ontology=="MF")[,c("ORF","term")])
+GO_gset_MF <- filter(GO_gset_MF, term != "molecular_function")
+
 GO_gset_BP=unique(filter(GO_gset,ontology=="BP")[,c("ORF","term")])
+GO_gset_BP <- filter(GO_gset_BP, term != "biological_process")
+
 GO_gset_CC=unique(filter(GO_gset,ontology=="CC")[,c("ORF","term")])
+GO_gset_CC <- filter(GO_gset_CC, term != "cellular_component")
 
 GOslim_BP=read.delim("go_slim_mapping_BP.tab")[,c(1,5)]
 colnames(GOslim_BP)<-c("ORF","term")
@@ -285,7 +290,6 @@ other_metal_terms <- c( # general - unspecific
                        "calcium-dependent protein kinase C activity",
                        "calcium-dependent protein serine/threonine phosphatase activity",
                        "calcium-dependent protein serine/threonine phosphatase regulator activity",
-                       "calcium-independent phospholipase A2 activity",
                        "calcium-dependent protein serine/threonine kinase activity",
                        
                        # Cu - none left after binding and transport
