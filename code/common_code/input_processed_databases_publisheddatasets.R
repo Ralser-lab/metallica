@@ -17,7 +17,7 @@ source("/Users/aulakhs/Documents/RalserLab/metallica/code/common_code/initialise
 setwd(db_dir)
 
 GO_gset=read.csv("ORF2GO_all_gsets.csv",stringsAsFactors = F)
-GO_gset_MF=unique(filter(GO_gset,ontology=="MF")[,c("ORF","term")])
+GO_gset_MF=unique(filter(GO_gset, ontology=="MF")[,c("ORF","term")])
 GO_gset_MF <- filter(GO_gset_MF, term != "molecular_function")
 
 GO_gset_BP=unique(filter(GO_gset,ontology=="BP")[,c("ORF","term")])

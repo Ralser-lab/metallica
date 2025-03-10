@@ -552,10 +552,14 @@ pdf(paste0(plot_dir,"/log2_metalconc_vs_medgrowthrate.pdf"),width = 6,height = 3
 ggplot(GC_fit_results_sum_test,
        aes(x = log2(actual_AEnorm_conc),
            y = Med.Growth.Rate,
-           colour = element))+
-  geom_smooth(se = T, linewidth = 0.5, alpha = 0.1)+
-  geom_point(size = 3,alpha = 0.6)+
+           colour = element,
+           fill = element))+
+  geom_smooth(se = T, linewidth = 0.5, alpha = 0.2)+
+  geom_point(size = 2.5,alpha = 0.4)+
+  geom_vline(xintercept = log2(5), colour = "red")+
+  geom_vline(xintercept = -log2(5),colour ="red")+
   scale_colour_manual(values = colkey_Ele)+
+  scale_fill_manual(values = colkey_Ele)+
   theme_metallica()+
   labs()
 dev.off()
@@ -563,7 +567,7 @@ dev.off()
 ### Write summarized growth data to disk ###
 ############################################
 
-write.csv(GC_fit_results_sum,paste0(outputtables_dir,"fitted_growthparams_summary.csv"),
+write.csv(GC_fit_results_sum_test,paste0(outputtables_dir,"fitted_growthparams_summary.csv"),
           row.names = F)
 
 write.csv(GC_fit_results,paste0(outputtables_dir,"fitted_growthparams_perreplicate.csv"),

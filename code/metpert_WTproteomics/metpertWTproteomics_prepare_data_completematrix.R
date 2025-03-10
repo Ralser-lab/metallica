@@ -480,16 +480,16 @@ for( i in 1:length(SEdfs)){
 
 ## Carry out DE analysis, save plots as pdfs and store results in a list of dfs 
 
-DE_res_dfs<-list()
+### DE_res_dfs<-list()
 
-for( i in 1:5){ # Dont do DE analysis on data with NAs replaced
+### for( i in 1:5){ # Dont do DE analysis on data with NAs replaced
   
-  DE_res_dfs[[i]] <- DE_analysis_and_plots_for_AllEleQC(df = SEdfs[[i]],
-                                           dsname = names(SEdfs)[[i]],
-                                           expdes =  Exp_Design,
-                                           onlyAEdat = T)
-  names(DE_res_dfs)[[i]] <- names(SEdfs)[[i]]
-}
+### DE_res_dfs[[i]] <- DE_analysis_and_plots_for_AllEleQC(df = SEdfs[[i]],
+###                                        dsname = names(SEdfs)[[i]],
+###                                        expdes =  Exp_Design,
+###                                        onlyAEdat = T)
+### names(DE_res_dfs)[[i]] <- names(SEdfs)[[i]]
+### }
 
 #########################
 ### with NA dataframe ###
@@ -1416,6 +1416,21 @@ FinnoNA_df <- merge(FinnoNA_df,sample_anno,by="File.Name")%>%
 
 write.csv(FinnoNA_df,paste0(output_tables_dir,"/allsamples/Protein Quantities wImpValues FullMatrix.csv"),row.names = F)
 
+##########################################
+### Add protein names to the dataframe ### 
+##########################################
+
+protein_ID_to_name <- FinnoNA_df[,c("Protein.Ids")]%>%
+                      unique()%>%
+                      as.data.frame()
+colnames(protein_ID_to_name) <- "Protein.Ids"
+
+protein_ID_to_name <- protein_ID_to_name%>%
+                      mutate(Protein_name = as.character(lapply(Protein.Ids, convert_Uniprot2SingleGeneName)))
+
+FinnoNA_df_w_protname <- merge(FinnoNA_df,protein_ID_to_name, by = 'Protein.Ids')
+
+write.csv(FinnoNA_df_w_protname,paste0(output_tables_dir,"/allsamples/Protein Quantities wImpValues FullMatrix w ProteinName.csv"),row.names = F)
 
 #############################
 ### QC number of proteins ###

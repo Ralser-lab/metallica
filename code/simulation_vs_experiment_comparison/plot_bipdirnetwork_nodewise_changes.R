@@ -83,6 +83,33 @@ geom_bar(aes(x = distance_group,
        y = "number of reactions",
        fill = "",
        colour = "")
+
+
+## bar height proportional to % of nodes
+
+ggplot(node_dist_sig_df)+
+  geom_bar(aes(x = distance_group,
+               y = frac_sig,
+               fill = type),
+           colour = "white",
+            stat = "identity", position = "dodge",
+           width = 0.5,
+           linewidth = 0.5)+
+  geom_text(aes(x = distance_group,
+                y = frac_sig + 0.02,
+                group = type,
+                colour = type,
+                label = total_reactions ),
+            size = 5)+
+  theme_metallica()+
+  ylim(0, 0.52)+
+  scale_color_brewer(palette = "Paired", direction = -1)+
+  scale_fill_brewer(palette = "Paired",direction = -1)+
+  labs(x= "distance nearest metal annotated reaction",
+       y = "fraction of significant reactions",
+       fill = "",
+       colour = "")
+
 dev.off()
 
 
@@ -145,8 +172,6 @@ dev.off()
 ##################################################################
 ##################################################################
 ##################################################################
-
-library(ggkegg)
 
 ## read in df created using igraph in jupyter notebook "Yeast8_dir-bip-graph_create_network_calc_centrality_distances2metalnodes"
 

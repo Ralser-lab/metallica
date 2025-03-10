@@ -828,6 +828,109 @@ metmet_correlations_siglab <- metmet_correlations[,-3]%>%
 colnames(metmet_correlations_siglab)[c(1,2)] <- c("metal_measured","metal_perturbed")
 write.csv(metmet_correlations_siglab, paste0(output_tables_dir,"/metalperturbed_metalmeasured_correlations.csv"),row.names = F)
 
+################################################################################################################
+### Plot concentration of Ca and Mn cellular concentration along environmental concentration of other metals ###
+################################################################################################################
+
+Mn_Ca_significant_corr <- filter(metmet_correlations_siglab,
+                                 metal_measured %in% c("Mn","Ca") & significant_spearman)
+
+Mn_Ca_to_plot <- merge(metallomics_AEnorm, Mn_Ca_significant_corr,
+                       by.x = c("element_measured","element_perturbed"),
+                       by.y = c("metal_measured","metal_perturbed"))
+
+pdf(paste0(plot_dir,"/Mn_Ca_metalperturbed_metalmeasured_relative_conc.pdf"), width = 13, height = 5)
+
+ggplot(filter(Mn_Ca_to_plot, element_perturbed != element_measured),
+       aes(x = log2(rel_env_element_concentration_actual),
+           y = log2(Ratio_to_AEngperwell),
+           colour = element_perturbed,
+           fill = element_perturbed))+
+  geom_point(size = 4, alpha = 0.7)+
+  geom_smooth(linewidth = 0.25)+
+  facet_wrap("element_measured", scales = "free")+
+  scale_colour_manual(values = colkey_Ele)+
+  scale_fill_manual(values = colkey_Ele)+
+  theme_metallica()
+
+
+ggplot(filter(Mn_Ca_to_plot, element_perturbed == element_measured),
+       aes(x = log2(rel_env_element_concentration_actual),
+           y = log2(Ratio_to_AEngperwell),
+           colour = element_perturbed,
+           fill = element_perturbed))+
+  geom_point(size = 4, alpha = 0.7)+
+  geom_smooth(linewidth = 0.25)+
+  facet_wrap("element_measured", scales = "free")+
+  scale_colour_manual(values = colkey_Ele)+
+  scale_fill_manual(values = colkey_Ele)+
+  theme_metallica()
+
+dev.off()
+
+###############################################################################################
+### calculate maximum intracellular change upon env change of same metal vs different metal ###
+###############################################################################################
+
+max_chg_same_metal <- metallomics_AEnorm%>%
+                      filter(element_measured == element_perturbed)%>%
+                      group_by(element_measured)%>%
+                      summarise(max_ratio_to_AE = max(Ratio_to_AEngperwell,na.rm=T))%>%
+                      ungroup()%>%
+                      mutate(label = 'same_metal_max')
+
+
+max_chg_diff_metal <- metallomics_AEnorm%>%
+                      filter(element_measured != element_perturbed)%>%
+                      group_by(element_measured)%>%
+                      summarise(max_ratio_to_AE = max(Ratio_to_AEngperwell,na.rm=T))%>%
+                      ungroup()%>%
+                      mutate(label = 'diff_metal_max')
+
+max_changes <- rbind(max_chg_same_metal, max_chg_diff_metal)%>%
+  filter(!element_measured %in% c("P","S"))
+
+min_chg_same_metal <- metallomics_AEnorm%>%
+                      filter(element_measured == element_perturbed)%>%
+                      group_by(element_measured)%>%
+                      summarise(min_ratio_to_AE = min(Ratio_to_AEngperwell,na.rm=T))%>%
+                      ungroup()%>%
+                      mutate(label = 'same_metal_min')
+
+
+min_chg_diff_metal <- metallomics_AEnorm%>%        
+                      filter(element_measured != element_perturbed)%>%
+                      group_by(element_measured)%>%
+                      summarise(min_ratio_to_AE = min(Ratio_to_AEngperwell,na.rm=T))%>%
+                      ungroup()%>%
+                      mutate(label = 'diff_metal_min')
+
+min_changes <- rbind(min_chg_same_metal, min_chg_diff_metal)%>%
+               filter(!element_measured %in% c("P","S"))
+
+pdf(paste0(plot_dir,"/max_changes_samevsdiffmetal.pdf"), width = 8.5,height = 5)
+ggplot(max_changes,
+       aes(x = element_measured,
+           y = max_ratio_to_AE,
+          
+           fill = label))+
+  geom_bar(stat = "identity",
+           position = "dodge",
+           colour = "black")+
+  theme_metallica()
+dev.off()
+
+pdf(paste0(plot_dir,"/min_changes_samevsdiffmetal.pdf"),width = 8.5,height = 5)
+ggplot(min_changes,
+       aes(x = element_measured,
+           y = min_ratio_to_AE,
+           
+           fill = label))+
+  geom_bar(stat = "identity",
+           position = "dodge",
+           colour = "black")+
+  theme_metallica()
+dev.off()
 
 ####################################################
 ### write data with replicates for metallica app ###

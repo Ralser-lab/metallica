@@ -89,6 +89,10 @@ OEmetallomics <- read.csv(paste0(published_dataset_dir,"/metallomics/OEmetallomi
 ### merge metal binder and metal transport annotations with each dataset ###
 ############################################################################
 
+##################################################
+### Along environmental concentration of metal ### 
+##################################################
+
 # filter data to keep only metal binding annotated proteins
 metb_data <- merge(metpertWTproteomics_extracell,GO_gset_MF_binding_metalwise, by = "ORF")%>%
   mutate(Metal_Match = ifelse(Element == term, "Same Metal", "Different Metal"))%>%
@@ -129,7 +133,7 @@ dev.off()
 mett_data <- merge(metpertWTproteomics_extracell,unique(rbind(GO_gset_MF_transporter_metalwise,
                                                               philpott_metal_transporter_df)), by = "ORF")%>%
   mutate(Metal_Match = ifelse(Element == term, "Same Metal", "Different Metal"))%>%
-  filter(!Element %in% c("Cu","Mg","Mo"))
+  filter(!Element %in% c("Mg","Mo"))
 
 
 label_data <- mett_data%>%
@@ -163,6 +167,83 @@ ggplot(mett_data, aes(x = log2(Element.Concentration),
   theme_metallica()
 dev.off()
 
+#############################################
+### Along cellular concentration of metal ### 
+#############################################
+
+# filter data to keep only metal binding annotated proteins
+metb_data <- merge(metpertWTproteomics_intracell,GO_gset_MF_binding_metalwise, by = "ORF")%>%
+  mutate(Metal_Match = ifelse(Element == term, "Same Metal", "Different Metal"))%>%
+  filter(!Element %in% c("Na","Mo"))
+
+label_data <- metb_data%>%
+  group_by(Metal_Match, Element)%>%
+  mutate(N_group = length(unique(ORF)),
+         label_yloc_group = mean(median_log2_foldchangevsAE,na.rm=T),
+         label_yloc_group = ifelse(Metal_Match == "Same Metal", label_yloc_group-0.2,
+                                   label_yloc_group+0.2)
+  )%>%
+  ungroup()%>%
+  dplyr::select(Element,Metal_Match,N_group,label_yloc_group)%>%
+  unique()
+
+pdf(paste0(plot_dir,"/metalbinders_along_cellmetalconc.pdf"),width = 25,height = 3.5)
+ggplot(metb_data, aes(x = log2(median_relative_intracellular_concentration),
+                      y = median_log2_foldchangevsAE, 
+                      color = Element)) +
+  geom_smooth(aes(linetype = Metal_Match), method = "loess",alpha = 0.2) +
+  geom_text(data = label_data,
+            aes(x = 0, y = label_yloc_group, label = N_group,
+                fontface = ifelse(Metal_Match == "Same Metal", "plain", "italic")))+
+  theme_minimal() +
+  facet_wrap("Element",scales = "free", nrow = 1)+
+  geom_hline(yintercept = 0, linewidth = 0.1)+
+  geom_vline(xintercept = 0, linewidth = 0.1)+
+  labs(color = "", linetype = "")+
+  scale_color_manual(values = colkey_Ele)+
+  scale_linetype_manual(values = c("Same Metal" = "solid", "Different Metal" = "dashed")) +  
+  theme_metallica()
+dev.off()
+
+## metal transporters
+
+# filter data to keep only metal binding annotated proteins
+mett_data <- merge(metpertWTproteomics_intracell,unique(rbind(GO_gset_MF_transporter_metalwise,
+                                                              philpott_metal_transporter_df)), by = "ORF")%>%
+  mutate(Metal_Match = ifelse(Element == term, "Same Metal", "Different Metal"))%>%
+  filter(!Element %in% c("Cu","Mo","Mg","Na"))
+
+
+label_data <- mett_data%>%
+  group_by(Metal_Match, Element)%>%
+  mutate(N_group = length(unique(ORF)),
+         label_yloc_group = mean(median_log2_foldchangevsAE,na.rm=T),
+         label_yloc_group = ifelse(Metal_Match == "Same Metal", label_yloc_group-0.5,
+                                   label_yloc_group+0.5)
+  )%>%
+  ungroup()%>%
+  dplyr::select(Element,Metal_Match,N_group,label_yloc_group)%>%
+  unique()
+
+pdf(paste0(plot_dir,"/metaltransporters_along_cellmetalconc.pdf"),width = 21,height = 3.5)
+ggplot(mett_data, aes(x = log2(median_relative_intracellular_concentration),
+                      y = median_log2_foldchangevsAE, 
+                      color = Element)) +
+  geom_smooth(aes(linetype = Metal_Match), method = "loess",alpha = 0.2) +
+  geom_text(data = label_data,
+            aes(x = 0, 
+                y = label_yloc_group,
+                label = N_group,
+                fontface = ifelse(Metal_Match == "Same Metal", "plain", "italic")))+
+  facet_wrap("Element",scales = "free", nrow = 1)+
+  labs(x = "Log2(Cellular Metal Concentration)",
+       y = "Log2 Fold Change vs AE", color = "", linetype = "")+
+  geom_hline(yintercept = 0, linewidth = 0.1)+
+  geom_vline(xintercept = 0, linewidth = 0.1)+
+  scale_color_manual(values = colkey_Ele)+
+  scale_linetype_manual(values = c("Same Metal" = "solid", "Different Metal" = "dashed")) +  
+  theme_metallica()
+dev.off()
 
 ############################
 ### metallomics datasets ###
@@ -388,6 +469,10 @@ y5k_metb_changes_per_KO = metb_data %>%
                 ungroup()%>%
                 arrange(num_sig)
 
+y5k_metb_changes_per_KO_geneunique <- y5k_metb_changes_per_KO %>%
+                                      dplyr::select(KO,num_sig,Gene_Name_KO)%>%
+                                      unique()
+
 pdf(paste0(plot_dir, "/y5k_numsigprots_numKOs_metalbinding.pdf"),width = 8,height = 6)
 ggplot(y5k_metb_changes_per_KO,
        aes(x = factor(num_sig),
@@ -404,6 +489,23 @@ ggplot(y5k_metb_changes_per_KO,
        colour = "")
 dev.off()
 
+########################################################################################
+###  check if number of proteins changing per KO is related to number of DA proteins ###  
+########################################################################################
+
+###  read in growth rate data from Messner et al 
+
+growth_rates_y5k <- read.csv(paste0(db_dir,"/yeast5k_growthrates_byORF.csv"), stringsAsFactors = F)
+
+gr_rate_vs_numchanges <- merge(growth_rates_y5k, y5k_metb_changes_per_KO, by.x = "orf", by.y = "KO")
+
+ggplot(gr_rate_vs_numchanges,
+       aes(x = num_sig,
+           y = SM))+
+  geom_point()+
+  geom_text_repel(aes(label = Gene_Name_KO))+
+  geom_smooth(method = 'lm')+
+  theme_metallica()
 
 
 ### transporters 
