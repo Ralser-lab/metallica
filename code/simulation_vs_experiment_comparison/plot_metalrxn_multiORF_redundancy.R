@@ -159,7 +159,7 @@ for(orf in 1:length(negative_corr_sig_ORFs)){
       scale_shape_manual(values = c(16, 17)) +
       labs(title = plot_title,
            x = "log2(env. metal concentration)",
-           y = "log2(fold difference vs control",
+           y = "log2(fold difference vs control)",
            colour = "Gene", 
            shape = "Metal Anno") +
       theme_metallica() +
@@ -284,7 +284,7 @@ for(orf in 1:length(negative_corr_sig_ORFs)){
       scale_shape_manual(values = c(16, 17)) +
       labs(title = plot_title,
            x = "log2(cellular metal concentration)",
-           y = "log2(fold difference vs control",
+           y = "log2(fold difference vs control)",
            colour = "Gene", 
            shape = "Metal Anno") +
       theme_metallica() +
