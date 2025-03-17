@@ -1,9 +1,0 @@
-,1,2,3,4,5,6,7,8,9,10,11,12
-"A","Mn_0x","Mn_5x","Mo_0x","Mo_5x","Na_0x","Na_5x","Zn_0x","Zn_x/2","Ca_0x+EGTA_2.5mM","Fe_0x+BCS_100uM","Cu_0x+NeC_500uM","Cu_0x+DfP_100uM"
-"B","Mn_x/100","Mn_10x","Mo_x/100","Mo_10x","Na_x/100","Na_10x","Zn_x/5000","Zn_2x","Ca_0x+EGTA_5mM","Fe_0x+BCS_200uM","Cu_0x+NeC_750uM","Cu_0x+DfP_200uM"
-"C","Mn_x/50","Mn_20x","Mo_x/50","Mo_20x","Na_x/50","Na_20x","Zn_x/1000","Zn_5x","Ca_0x+EGTA_10mM","Fe_0x+BCS_300uM","Cu_0x+NeC_1000uM","Cu_0x+DfP_300uM"
-"D","Mn_x/20","Mn_50x","Mo_x/20","Mo_50x","Na_x/20","Na_50x","Zn_x/100","Zn_10x","Ca_0x+EGTA_15mM","Fe_0x+BCS_400uM","Cu_0x+NeC_2000uM","Cu_0x+DfP_400uM"
-"E","Mn_x/10","Mn_100x","Mo_x/10","Mo_100x","Na_x/10","Na_100x","Zn_x/50","Zn_20x","Ca_0x+EGTA_25mM","Fe_0x+BCS_500uM","Cu_0x+DMSO","Cu_0x+DfP_500uM"
-"F","Mn_x/5","Empty","Mo_x/5","Empty","Na_x/5","Empty","Zn_x/20","Zn_50x","Empty","Empty","Empty","Empty"
-"G","Mn_x/2","Empty","Mo_x/2","Empty","Na_x/2","Empty","Zn_x/10","Zn_100x","Empty","Empty","Empty","Empty"
-"H","Mn_2x","Empty","Mo_2x","Empty","Na_2x","B_x/10","Zn_x/5","Empty","Empty","Empty","Empty","Empty"

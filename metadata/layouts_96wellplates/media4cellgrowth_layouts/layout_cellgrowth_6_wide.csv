@@ -1,9 +1,0 @@
-,1,2,3,4,5,6,7,8,9,10,11,12
-A,Empty,Empty,Empty,AllEle_prepQC,AllEle_prepQC,AllEle_prepQC,Empty,Empty,Empty,Empty,Empty,Empty
-B,Empty,Fe_2x_o,Empty,AllEle_New,Na_5x,Fe_0x+BCS_200uM,Zn_5x,AllEle_New,Fe_0x+BCS_500uM,Empty,Fe_2x_o,Fe_100x_o
-C,AllEle_New,Fe_5x_o,Na_0x,Na_x/10,Na_10x,AllEle+DfP_10uM,Zn_10x,Zn_100x,AllEle+DfP_10uM,Empty,Fe_5x_o,Empty
-D,AllEle_New,AllEle_New,Fe_50x_o,Na_x/5,AllEle_New,AllEle+DfP_50uM,Zn_20x,Fe_0x+BCS_100uM,AllEle+DfP_50uM,Na_x/20,Fe_10x_o,Empty
-E,AllEle_New,Fe_10x_o,Na_x/50,Na_x/2,Na_20x,Fe_0x+BCS_500uM,Fe_0x,Fe_0x+BCS_200uM,AllEle+DfP_100uM,Na_x/10,Empty,AllEle+DfP_100uM
-F,Fe_100x_o,Fe_20x_o,Na_x/20,Na_2x,Na_100x,Zn_2x,Fe_0x,Empty,AllEle+DfP_150uM,AllEle_New,Empty,AllEle+DfP_150uM
-G,Empty,Fe_50x_o,Empty,Na_50x,Fe_0x+BCS_100uM,AllEle_New,Zn_50x,Empty,AllEle+DfP_250uM,Na_x/5,Fe_20x_o,AllEle+DfP_250uM
-H,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty

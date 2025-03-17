@@ -1,9 +1,0 @@
-,1,2,3,4,5,6,7,8,9,10,11,12
-"A","Empty","Empty","Empty","AllEle_prepQC","AllEle_prepQC","AllEle_prepQC","Empty","Empty","Empty","Empty","Empty","Empty"
-"B","Empty","Zn_x/5000","Zn_x/10","AllEle","Zn_x/1000","Zn_x/5","K_x/2","AllEle","Mg_20x","Mg_x/20","Mg_5x","Empty"
-"C","AllEle_New","Zn_x/1000","Zn_x/5","K_x/2","Zn_x/100","Zn_x/2","K_2x","Mg_x/5","Mg_50x","Mg_x/10","Mg_10x","Empty"
-"D","AllEle_New","AllEle","Zn_x/2","K_2x","AllEle","Zn_100x","K_5x","Mg_x/2","Fe_0x+DiP_50uM","Mg_x/5","Mg_20x","Empty"
-"E","AllEle_New","Zn_x/100","Zn_100x","K_5x","Zn_x/50","K_x/10","K_10x","Mg_2x","Fe_0x+DiP_100uM","Mg_x/2","Mg_50x","Mo_50x"
-"F","Mo_50x","Zn_x/50","K_x/10","K_10x","Zn_x/20","K_x/5","Mg_x/20","Mg_5x","Fe_0x+DiP_150uM","AllEle","Fe_0x+DiP_50uM","Mo_100x"
-"G","Mo_100x","Zn_x/20","K_x/5","Zn_x/5000","Zn_x/10","AllEle","Mg_x/10","Mg_10x","Fe_0x+DiP_200uM","Mg_2x","Fe_0x+DiP_100uM","Empty"
-"H","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Fe_0x+DiP_250uM","Empty","Empty","Empty"

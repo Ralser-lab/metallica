@@ -1,9 +1,0 @@
-,1,2,3,4,5,6,7,8,9,10,11,12
-"A","AllEle_1x_0uM","B_2x","Ca_0x","Ca_5x","Cu_0x","Cu_5x","Fe_0x","Fe_5x","K_0x","K_5x","Mg_0x","Mg_2x"
-"B","B_0x","B_5x","Ca_x/100","Ca_10x","Cu_x/100","Cu_10x","Fe_x/100","Fe_10x","K_x/100","K_10x","Mg_x/1000","Mg_5x"
-"C","B_x/100","B_10x","Ca_x/50","Ca_20x","Cu_x/50","Cu_20x","Fe_x/50","Fe_20x","K_x/50","K_20x","Mg_x/100","Mg_10x"
-"D","B_x/50","B_20x","Ca_x/20","Ca_50x","Cu_x/20","Cu_50x","Fe_x/20","Fe_50x","K_x/20","K_50x","Mg_x/50","Mg_20x"
-"E","B_x/20","B_50x","Ca_x/10","Ca_100x","Cu_x/10","Cu_100x","Fe_x/10","Fe_100x","K_x/10","Empty","Mg_x/20","Mg_50x"
-"F","Empty","B_100x","Ca_x/5","Empty","Cu_x/5","Empty","Fe_x/5","Empty","K_x/5","Empty","Mg_x/10","Empty"
-"G","B_x/5","Empty","Ca_x/2","Empty","Cu_x/2","Empty","Fe_x/2","Empty","K_x/2","Empty","Mg_x/5","Empty"
-"H","B_x/2","Empty","Ca_2x","Empty","Cu_2x","Empty","Fe_2x","Empty","K_2x","Empty","Mg_x/2","Empty"
