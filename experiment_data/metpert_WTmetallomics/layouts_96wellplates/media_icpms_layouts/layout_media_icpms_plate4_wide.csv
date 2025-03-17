@@ -1,9 +1,0 @@
-,1,2,3,4,5,6,7,8,9,10,11,12
-A,Fe_0x,Fe_5x,Zn_0x,AllEle+Dfp_10uM,Fe_0x+DiP_50uM,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-B,Fe_x/100,Fe_10x,Zn_x/100,AllEle+Dfp_50uM,Fe_0x+DiP_100uM,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-C,Empty,Fe_20x,Zn_x/50,AllEle+Dfp_100uM,Fe_0x+DiP_150uM,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-D,Empty,Fe_50x,Zn_x/20,AllEle+Dfp_150uM,Fe_0x+DiP_200uM,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-E,Fe_x/10,Fe_100x,Zn_x/10,AllEle+Dfp_250uM,Fe_0x+DiP_250uM,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-F,Fe_x/5,Empty,Zn_x/5,Empty,AllEle,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-G,Fe_x/2,Empty,Zn_x/2,Empty,AllEle,Empty,Empty,Empty,Empty,Empty,Empty,Empty
-H,Fe_2x,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty,Empty
