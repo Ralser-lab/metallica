@@ -1,0 +1,134 @@
+Gene,Perturbation,Direction_FC,FoldChange_vs_Control,Measurement,Dataset,Pathway
+CYC1,Depletion,decrease,0.075,transcript,Shakoury-Elizeh_2010,respiration
+CYT1,Depletion,decrease,0.153,transcript,Shakoury-Elizeh_2010,respiration
+CYC7,Depletion,decrease,0.178,transcript,Shakoury-Elizeh_2010,respiration
+COA2,Depletion,decrease,0.212,transcript,Shakoury-Elizeh_2010,respiration
+RIP1,Depletion,decrease,0.226,transcript,Shakoury-Elizeh_2010,respiration
+YKL045W,Depletion,decrease,0.27,transcript,Shakoury-Elizeh_2010,respiration
+SDH4,Depletion,decrease,0.282,transcript,Shakoury-Elizeh_2010,respiration
+QCR10,Depletion,decrease,0.292,transcript,Shakoury-Elizeh_2010,respiration
+SDH3,Depletion,decrease,0.293,transcript,Shakoury-Elizeh_2010,respiration
+COX6,Depletion,decrease,0.355,transcript,Shakoury-Elizeh_2010,respiration
+QCR2,Depletion,decrease,0.379,transcript,Shakoury-Elizeh_2010,respiration
+QCR8,Depletion,decrease,0.386,transcript,Shakoury-Elizeh_2010,respiration
+NDI1,Depletion,decrease,0.397,transcript,Shakoury-Elizeh_2010,respiration
+COR1,Depletion,decrease,0.407,transcript,Shakoury-Elizeh_2010,respiration
+QCR7,Depletion,decrease,0.413,transcript,Shakoury-Elizeh_2010,respiration
+CBP4,Depletion,decrease,0.427,transcript,Shakoury-Elizeh_2010,respiration
+CBP6,Depletion,decrease,0.446,transcript,Shakoury-Elizeh_2010,respiration
+COX4,Depletion,decrease,0.446,transcript,Shakoury-Elizeh_2010,respiration
+QCR9,Depletion,decrease,0.498,transcript,Shakoury-Elizeh_2010,respiration
+CYB2,Depletion,decrease,0.5,transcript,Shakoury-Elizeh_2010,respiration
+COX5A,Depletion,decrease,0.518,transcript,Shakoury-Elizeh_2010,respiration
+COX8,Depletion,decrease,0.524,transcript,Shakoury-Elizeh_2010,respiration
+CBP3,Depletion,decrease,0.546,transcript,Shakoury-Elizeh_2010,respiration
+CYT2,Depletion,decrease,0.541,transcript,Shakoury-Elizeh_2010,respiration
+PET100,Depletion,decrease,0.556,transcript,Shakoury-Elizeh_2010,respiration
+COX15,Depletion,decrease,0.562,transcript,Shakoury-Elizeh_2010,respiration
+RSF1,Depletion,decrease,0.595,transcript,Shakoury-Elizeh_2010,respiration
+COX7,Depletion,decrease,0.602,transcript,Shakoury-Elizeh_2010,respiration
+PET20,Depletion,decrease,0.613,transcript,Shakoury-Elizeh_2010,respiration
+COX17,Depletion,decrease,0.645,transcript,Shakoury-Elizeh_2010,respiration
+ACO1,Depletion,decrease,0.585,transcript,Shakoury-Elizeh_2010,TCA cycle
+ACO2,Depletion,decrease,0.524,transcript,Shakoury-Elizeh_2010,TCA cycle
+KGD1,Depletion,decrease,0.61,transcript,Shakoury-Elizeh_2010,TCA cycle
+SDH1,Depletion,decrease,0.141,transcript,Shakoury-Elizeh_2010,TCA cycle
+SDH2,Depletion,decrease,0.2,transcript,Shakoury-Elizeh_2010,TCA cycle
+SDH3,Depletion,decrease,0.293,transcript,Shakoury-Elizeh_2010,TCA cycle
+SDH4,Depletion,decrease,0.282,transcript,Shakoury-Elizeh_2010,TCA cycle
+PTR3,Depletion,increase,1.75,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+ARG80,Depletion,increase,1.61,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+ARG3,Depletion,increase,1.55,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+VBA3,Depletion,increase,3.51,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+ALP1,Depletion,increase,1.87,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+GTO3,Depletion,increase,11.8,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+YCT1,Depletion,increase,3.98,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+ECM4,Depletion,increase,2.89,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+MET2,Depletion,increase,2.52,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+MMP1,Depletion,increase,2.13,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+BDS1,Depletion,increase,1.87,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+SUL2,Depletion,increase,1.77,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+LAP3,Depletion,increase,1.74,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+STR3,Depletion,increase,1.54,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+SNO1,Depletion,increase,2.6,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+GDH3,Depletion,increase,4.52,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+TMT1,Depletion,increase,4.73,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+OAC1,Depletion,increase,1.72,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+BAT2,Depletion,increase,2.42,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+BAP2,Depletion,increase,12.93,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+NMA2,Depletion,increase,2,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+HBN1,Depletion,increase,5.34,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+FRM2,Depletion,increase,4.18,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+GLT1,Depletion,decrease,0.167504188,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+ILV3,Depletion,decrease,0.636942675,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+MET5,Depletion,decrease,0.636942675,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+LEU1,Depletion,decrease,0.666666667,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+LYS4,Depletion,decrease,0.471698113,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+PUT4,Depletion,decrease,0.552486188,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+ARO10,Depletion,decrease,0.621118012,transcript,Shakoury-Elizeh_2010,amino acid biosynthesis
+FIT1,Depletion,increase,22.6,transcript,Puig_2005,AFT1 AFT2 targets
+FIT2,Depletion,increase,59.6,transcript,Puig_2005,AFT1 AFT2 targets
+FIT3,Depletion,increase,329.9,transcript,Puig_2005,AFT1 AFT2 targets
+ARN1,Depletion,increase,29.9,transcript,Puig_2005,AFT1 AFT2 targets
+ARN2,Depletion,increase,54.5,transcript,Puig_2005,AFT1 AFT2 targets
+SIT1,Depletion,increase,27.9,transcript,Puig_2005,AFT1 AFT2 targets
+ENB1,Depletion,increase,9.9,transcript,Puig_2005,AFT1 AFT2 targets
+FET3,Depletion,increase,18.6,transcript,Puig_2005,AFT1 AFT2 targets
+FTR1,Depletion,increase,12.2,transcript,Puig_2005,AFT1 AFT2 targets
+ATX1,Depletion,increase,3.3,transcript,Puig_2005,AFT1 AFT2 targets
+CCC2,Depletion,increase,3,transcript,Puig_2005,AFT1 AFT2 targets
+FRE1,Depletion,increase,9,transcript,Puig_2005,AFT1 AFT2 targets
+FRE3,Depletion,increase,3,transcript,Puig_2005,AFT1 AFT2 targets
+FRE6,Depletion,increase,2.1,transcript,Puig_2005,AFT1 AFT2 targets
+FET4,Depletion,increase,4.9,transcript,Puig_2005,AFT1 AFT2 targets
+FET5,Depletion,increase,2.6,transcript,Puig_2005,AFT1 AFT2 targets
+FTH1,Depletion,increase,2.7,transcript,Puig_2005,AFT1 AFT2 targets
+HMX1,Depletion,increase,8.7,transcript,Puig_2005,AFT1 AFT2 targets
+CTH2,Depletion,increase,15.2,transcript,Puig_2005,AFT1 AFT2 targets
+ERG2,Depletion,increase,2.7,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG24,Depletion,increase,2.4,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG25,Depletion,increase,5.5,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG27,Depletion,increase,2.3,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG3,Depletion,increase,6.4,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG4,Depletion,increase,2.1,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG6,Depletion,increase,2.5,transcript,Puig_2005,sterol and fatty acid synthesis
+ERG9,Depletion,increase,2.1,transcript,Puig_2005,sterol and fatty acid synthesis
+OLE1,Depletion,increase,7.8,transcript,Puig_2005,sterol and fatty acid synthesis
+PYC1,Depletion,decrease,0.5,transcript,Puig_2005,TCA cycle
+PYC2,Depletion,decrease,0.4,transcript,Puig_2005,TCA cycle
+KGD1,Depletion,decrease,0.5,transcript,Puig_2005,TCA cycle
+SDH2,Depletion,decrease,0.2,transcript,Puig_2005,TCA cycle
+SDH4,Depletion,decrease,0.294117647,transcript,Puig_2005,TCA cycle
+ACO2,Depletion,decrease,0.454545455,transcript,Puig_2005,TCA cycle
+CYC1,Depletion,decrease,0.416666667,transcript,Puig_2005,"ETC, mitochondrial respiration"
+COX6,Depletion,decrease,0.188679245,transcript,Puig_2005,"ETC, mitochondrial respiration"
+COX9,Depletion,decrease,0.454545455,transcript,Puig_2005,"ETC, mitochondrial respiration"
+COX8,Depletion,decrease,0.476190476,transcript,Puig_2005,"ETC, mitochondrial respiration"
+CYT1,Depletion,decrease,0.185185185,transcript,Puig_2005,"ETC, mitochondrial respiration"
+COR1,Depletion,decrease,0.384615385,transcript,Puig_2005,"ETC, mitochondrial respiration"
+QCR2,Depletion,decrease,0.344827586,transcript,Puig_2005,"ETC, mitochondrial respiration"
+QCR6,Depletion,decrease,0.357142857,transcript,Puig_2005,"ETC, mitochondrial respiration"
+QCR7,Depletion,decrease,0.294117647,transcript,Puig_2005,"ETC, mitochondrial respiration"
+QCR8,Depletion,decrease,0.434782609,transcript,Puig_2005,"ETC, mitochondrial respiration"
+RIP1,Depletion,decrease,0.27027027,transcript,Puig_2005,"ETC, mitochondrial respiration"
+HAP4,Depletion,decrease,0.333333333,transcript,Puig_2005,"ETC, mitochondrial respiration"
+CCP1,Depletion,decrease,0.125,transcript,Puig_2005,"ETC, mitochondrial respiration"
+ALD5,Depletion,decrease,0.25,transcript,Puig_2005,"ETC, mitochondrial respiration"
+CIR2,Depletion,decrease,0.166666667,transcript,Puig_2005,"ETC, mitochondrial respiration"
+NFU1,Depletion,decrease,0.384615385,transcript,Puig_2005,Fe-S biosynthesis
+ISA1,Depletion,decrease,0.588235294,transcript,Puig_2005,Fe-S biosynthesis
+LEU1,Depletion,decrease,0.033783784,transcript,Puig_2005,Fe-S cluster containing proteins
+SDH2,Depletion,decrease,0.2,transcript,Puig_2005,Fe-S cluster containing proteins
+LIP5,Depletion,decrease,0.25,transcript,Puig_2005,Fe-S cluster containing proteins
+RIP1,Depletion,decrease,0.27027027,transcript,Puig_2005,Fe-S cluster containing proteins
+YAH1,Depletion,decrease,0.344827586,transcript,Puig_2005,Fe-S cluster containing proteins
+RLI1,Depletion,decrease,0.416666667,transcript,Puig_2005,Fe-S cluster containing proteins
+BIO2,Depletion,decrease,0.476190476,transcript,Puig_2005,Fe-S cluster containing proteins
+HEM15,Depletion,decrease,0.322580645,transcript,Puig_2005,heme biosynthesis
+HEM13,Depletion,decrease,0.588235294,transcript,Puig_2005,heme biosynthesis
+CTT1,Depletion,decrease,0.23255814,transcript,Puig_2005,heme containing proteins
+SDH4,Depletion,decrease,0.294117647,transcript,Puig_2005,heme containing proteins
+BIO2,Depletion,decrease,0.476190476,transcript,Puig_2005,biotin biosynthesis
+BIO3,Depletion,decrease,0.434782609,transcript,Puig_2005,biotin biosynthesis
+RNR2,Depletion,decrease,0.588235294,transcript,Puig_2005,DNA replication and repair
+RNR4,Depletion,decrease,0.434782609,transcript,Puig_2005,DNA replication and repair
