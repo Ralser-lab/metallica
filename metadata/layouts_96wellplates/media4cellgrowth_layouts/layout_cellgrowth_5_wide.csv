@@ -1,0 +1,9 @@
+,1,2,3,4,5,6,7,8,9,10,11,12
+"A","Empty","Empty","Empty","AllEle_prepQC","AllEle_prepQC","AllEle_prepQC","Empty","Empty","Empty","Empty","Empty","Empty"
+"B","Empty","Na_x/2","Na_50x","AllEle","Ca_x/20","Ca_5x","Na_x/20","AllEle","Zn_5x","Fe_2x_o","Fe_50x_o","Fe_20x_o"
+"C","AllEle_New","Na_2x","Na_100x","Zn_50x","Ca_x/10","Ca_10x","Na_x/10","Na_10x","Zn_10x","Fe_5x_o","Fe_100x_o","Fe_50x_o"
+"D","AllEle_New","AllEle","Zn_2x","Zn_100x","AllEle","Na_0x","Na_x/5","Na_20x","Zn_20x","Fe_10x_o","Empty","Fe_100x_o"
+"E","AllEle_New","Na_5x","Zn_5x","Ca_0x","Ca_x/5","Na_x/100","Na_x/2","Na_50x","Zn_50x","Fe_20x_o","Fe_2x_o","Empty"
+"F","Empty","Na_10x","Zn_10x","Ca_x/100","Ca_x/2","Na_x/50","Na_2x","Na_100x","Zn_100x","AllEle","Fe_5x_o","Empty"
+"G","Empty","Na_20x","Zn_20x","Ca_x/50","Ca_2x","AllEle","Na_5x","Zn_2x","Empty","Empty","Fe_10x_o","Empty"
+"H","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Empty","Empty"
